@@ -274,10 +274,10 @@ class TestScanManager:
         manager._run_js_analyzer = lambda url: []
         manager._apply_rule_engine = failing_rules
 
-        result = manager.run_pipeline(scan_id)
-        assert result["status"] == "failed"
+        with pytest.raises(RuntimeError, match="Rule engine crashed"):
+            manager.run_pipeline(scan_id)
 
-        # Verify scan was marked failed
+        # Verify scan was marked failed despite the re-raise
         saved = db_session.query(Scan).filter(Scan.id == scan_id).first()
         assert saved.status == ScanStatus.FAILED
 

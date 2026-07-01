@@ -43,6 +43,9 @@ class ScanManager:
     def run_pipeline(self, scan_id: uuid.UUID) -> dict:
         """Execute the complete assessment pipeline for a scan."""
         session = self._session_factory()
+        if session is None:
+            logger.error("PIPELINE FAILURE: session factory returned None")
+            return {"status": "error", "detail": "Database session factory returned None"}
         try:
             scan = session.query(Scan).filter(Scan.id == scan_id).first()
             if not scan:
@@ -121,15 +124,16 @@ class ScanManager:
 
         except Exception as exc:
             logger.error(f"PIPELINE FAILURE: {str(exc)}", exc_info=True)
-            try:
-                scan = session.query(Scan).filter(Scan.id == scan_id).first()
-                if scan:
-                    scan.status = ScanStatus.FAILED
-                    scan.error = str(exc)
-                    scan.completed_at = datetime.now(timezone.utc)
-                    session.commit()
-            except Exception as inner_err:
-                logger.error(f"PIPELINE FAILURE: failed to persist error state: {str(inner_err)}", exc_info=True)
+            if session is not None:
+                try:
+                    scan = session.query(Scan).filter(Scan.id == scan_id).first()
+                    if scan:
+                        scan.status = ScanStatus.FAILED
+                        scan.error = str(exc)
+                        scan.completed_at = datetime.now(timezone.utc)
+                        session.commit()
+                except Exception as inner_err:
+                    logger.error(f"PIPELINE FAILURE: failed to persist error state: {str(inner_err)}", exc_info=True)
             self.cleanup_resources(session)
             raise exc
 
