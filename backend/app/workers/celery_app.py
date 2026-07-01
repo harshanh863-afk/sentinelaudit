@@ -21,6 +21,10 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    broker_transport_options={
+        "global_key_prefix": "sentinelaudit:",
+        "polling_interval": 1,
+    },
 )
 
 celery_app.conf.database_table_names = {
