@@ -4,9 +4,12 @@ Creates temporary project/target/scan for a public URL,
 dispatches the Celery scan task, and returns the scan ID.
 """
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
 
@@ -72,8 +75,10 @@ def create_public_scan(db: Session, target_url: str) -> Scan:
 
     from app.workers.scan_tasks import start_scan_task
     try:
-        start_scan_task.delay(str(scan.id))
-    except Exception:
-        pass
+        logger.info(f"Dispatching Celery task for scan {scan.id}...")
+        result = start_scan_task.delay(str(scan.id))
+        logger.info(f"Celery task successfully dispatched with task_id: {result.id}")
+    except Exception as celery_err:
+        logger.error(f"FATAL: Failed to dispatch Celery task for scan {scan.id}: {str(celery_err)}", exc_info=True)
 
     return scan
