@@ -36,4 +36,13 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_soft_time_limit=int(os.getenv("SCANNER_TIMEOUT", "30")) * 2,
     task_time_limit=int(os.getenv("SCANNER_TIMEOUT", "30")) * 3,
+    broker_transport_options={
+        "global_keyprefix": "sentinel:",
+        "fanout_patterns": True,
+        "fanout_prefixes": True,
+    },
+    redis_backend_use_ssl={"ssl_cert_reqs": 0},
+    result_backend_transport_options={
+        "global_keyprefix": "sentinel_res:",
+    },
 )
