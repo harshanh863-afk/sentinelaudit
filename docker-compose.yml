@@ -29,7 +29,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     ports:
       - "${BACKEND_PORT:-8000}:8000"
