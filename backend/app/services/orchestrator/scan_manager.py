@@ -11,6 +11,7 @@ Individual scanner failures are captured and do not abort the scan.
 """
 
 import asyncio
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -24,6 +25,8 @@ from app.services.orchestrator.pipeline import (
     get_stage,
 )
 from app.services.orchestrator.models import ScannerError
+
+logger = logging.getLogger(__name__)
 
 
 class ScanManager:
@@ -117,6 +120,7 @@ class ScanManager:
             }
 
         except Exception as exc:
+            logger.error(f"PIPELINE FAILURE: {str(exc)}", exc_info=True)
             try:
                 scan = session.query(Scan).filter(Scan.id == scan_id).first()
                 if scan:
@@ -124,13 +128,33 @@ class ScanManager:
                     scan.error = str(exc)
                     scan.completed_at = datetime.now(timezone.utc)
                     session.commit()
-            except Exception:
-                pass
-            return {"status": "failed", "scan_id": str(scan_id), "error": str(exc)}
+            except Exception as inner_err:
+                logger.error(f"PIPELINE FAILURE: failed to persist error state: {str(inner_err)}", exc_info=True)
+            self.cleanup_resources(session)
+            raise exc
 
         finally:
             if session is not None:
                 session.close()
+
+    # ------------------------------------------------------------------
+    # Timeout helper
+    # ------------------------------------------------------------------
+
+    async def run_with_timeout(self, scanner_fn, *args, timeout=60):
+        try:
+            return await asyncio.wait_for(scanner_fn(*args), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.error(f"SCANNER TIMEOUT: {scanner_fn.__name__} exceeded {timeout}s")
+            raise
+
+    # ------------------------------------------------------------------
+    # Resource cleanup
+    # ------------------------------------------------------------------
+
+    def cleanup_resources(self, session):
+        """Release any resources held during the pipeline."""
+        logger.info("PIPELINE CLEANUP: releasing resources")
 
     # ------------------------------------------------------------------
     # Progress tracking
@@ -163,10 +187,10 @@ class ScanManager:
             self._errors.append(ScannerError(scanner_name=label, error=str(exc)))
             return []
 
-    def _run_http_analyzer(self, url: str) -> list[dict]:
+    async def _run_http_analyzer(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.http_analyzer import HTTPAnalyzer
         analyzer = HTTPAnalyzer(timeout=30)
-        results = asyncio.run(analyzer.analyze(url))
+        results = await self.run_with_timeout(analyzer.analyze, url, timeout=30)
         return [
             {
                 "check_name": r.observation_type,
@@ -179,10 +203,10 @@ class ScanManager:
             for r in results
         ]
 
-    def _run_tls_analyzer(self, url: str) -> list[dict]:
+    async def _run_tls_analyzer(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.tls_analyzer import TLSInspector
         inspector = TLSInspector()
-        results = asyncio.run(inspector.analyze(url))
+        results = await self.run_with_timeout(inspector.analyze, url)
         return [
             {
                 "check_name": r.observation_type,
@@ -195,12 +219,12 @@ class ScanManager:
             for r in results
         ]
 
-    def _run_dns_analyzer(self, url: str) -> list[dict]:
+    async def _run_dns_analyzer(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.dns_analyzer import DNSAnalyzer
         from urllib.parse import urlparse
         host = urlparse(url).hostname or url
         analyzer = DNSAnalyzer()
-        results = asyncio.run(analyzer.analyze(host))
+        results = await self.run_with_timeout(analyzer.analyze, host)
         return [
             {
                 "check_name": r.observation_type,
@@ -213,10 +237,10 @@ class ScanManager:
             for r in results
         ]
 
-    def _run_tech_fingerprinter(self, url: str) -> list[dict]:
+    async def _run_tech_fingerprinter(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.technology_fingerprint import TechnologyFingerprinter
         fingerprinter = TechnologyFingerprinter()
-        results = asyncio.run(fingerprinter.analyze(url))
+        results = await self.run_with_timeout(fingerprinter.analyze, url)
         return [
             {
                 "check_name": r.observation_type,
@@ -229,10 +253,10 @@ class ScanManager:
             for r in results
         ]
 
-    def _run_js_analyzer(self, url: str) -> list[dict]:
+    async def _run_js_analyzer(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.javascript_analyzer import JavaScriptAnalyzer
         analyzer = JavaScriptAnalyzer()
-        results = asyncio.run(analyzer.analyze(url))
+        results = await self.run_with_timeout(analyzer.analyze, url)
         return [
             {
                 "check_name": r.observation_type,
