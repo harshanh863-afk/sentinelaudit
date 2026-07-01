@@ -22,19 +22,23 @@ services:
   - type: worker
     name: sentinelaudit-worker
     runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    startCommand: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+    dockerfilePath: Dockerfile
+    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromService:
+          type: web
+          name: sentinelaudit-api
+          property: env:DATABASE_URL
       - key: REDIS_URL
-        sync: false
+        fromService:
+          type: web
+          name: sentinelaudit-api
+          property: env:REDIS_URL
       - key: SECRET_KEY
-        sync: false
+        fromService:
+          type: web
+          name: sentinelaudit-api
+          property: env:SECRET_KEY
       - key: ENVIRONMENT
         value: production
-      - key: FRONTEND_URL
-        value: https://sentinelaudit.vercel.app
-      - key: DEBUG
-        value: "false"
