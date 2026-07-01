@@ -1,0 +1,52 @@
+rules:
+  - id: "DNS-003"
+    name: "Missing DKIM Record"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.6
+    description: >
+      No DKIM (DomainKeys Identified Mail) record was found for the domain.
+      DKIM is an email authentication method that allows the domain to
+      cryptographically sign emails, verifying they were not tampered
+      with during transit.
+    impact: >
+      Emails from the domain can be forged or tampered with without detection.
+      Recipient mail servers may flag emails as suspicious or spam.
+    evidence_description: >
+      No DKIM TXT record was found for the domain.
+    remediation: >
+      Implement DKIM signing for all outgoing email. Generate a public
+      key pair, publish the public key as a DNS TXT record under a
+      selector (e.g., 'default._domainkey.domain.com'), and configure
+      your mail server to sign outgoing messages with the private key.
+    references:
+      - "https://tools.ietf.org/html/rfc6376"
+      - "https://www.dmarc.org/"
+      - "https://www.cisa.gov/resources-tools/services/dmarc"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "SI-7"
+        control_name: "Software and Information Integrity"
+      - framework: "nist_80053"
+        control_id: "SI-7"
+        control_name: "Software and Information Integrity"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-3"
+        control_name: "DKIM Signing"
+    cwe:
+      - cwe_id: "CWE-347"
+        name: "Improper Verification of Cryptographic Signature"
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

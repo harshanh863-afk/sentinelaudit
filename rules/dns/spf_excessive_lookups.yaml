@@ -1,0 +1,45 @@
+rules:
+  - id: "DNS-009"
+    name: "SPF Record Exceeds DNS Lookup Limit"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      The SPF record requires more than 10 DNS lookups, exceeding the
+      RFC 7208 limit. This causes SPF validation to fail permanently,
+      meaning the SPF record is effectively ignored by receiving servers.
+    impact: >
+      The SPF record is invalid and provides no email authentication
+      protection. Spoofed emails from the domain will pass SPF checks
+      because the record cannot be fully evaluated.
+    evidence_description: >
+      The SPF record requires more than 10 DNS lookups.
+    remediation: >
+      Reduce the number of DNS lookups by consolidating include
+      statements, removing unused mechanisms, or using a more
+      efficient SPF record structure.
+    references:
+      - "https://tools.ietf.org/html/rfc7208#section-4.6.4"
+      - "https://www.dmarc.org/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-2"
+        control_name: "SPF Record"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

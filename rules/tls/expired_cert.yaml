@@ -1,0 +1,63 @@
+rules:
+  - id: "TLS-002"
+    name: "Expired TLS Certificate"
+    category: "tls_analysis"
+    severity: "critical"
+    cvss_score: 9.1
+    description: >
+      The TLS certificate presented by the server has expired.
+      Expired certificates indicate administrative neglect and cause
+      browser security warnings that erode user trust. The connection
+      cannot be verified as authentic.
+    impact: >
+      Users will receive certificate warning messages in all modern
+      browsers. The server may fail automated security checks and
+      compliance audits. Data transmission integrity cannot be guaranteed.
+    evidence_description: >
+      The TLS certificate's validity period has ended.
+    remediation: >
+      Renew the TLS certificate immediately and verify the new certificate
+      is correctly installed. Set up automated monitoring to send alerts
+      at least 30 days before certificate expiration.
+    references:
+      - "https://owasp.org/www-project-transport-layer-protection/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html"
+      - "https://letsencrypt.org/docs/expiration-emails/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist_80053"
+        control_id: "SC-12"
+        control_name: "Cryptographic Key Management"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "soc2"
+        control_id: "CC6.7"
+        control_name: "Data Transmission Protection"
+      - framework: "tls_sec"
+        control_id: "TLS-4"
+        control_name: "Certificate Expiration"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+      - cwe_id: "CWE-326"
+        name: "Inadequate Encryption Strength"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"

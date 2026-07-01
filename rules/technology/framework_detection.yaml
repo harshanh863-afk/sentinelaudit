@@ -1,0 +1,62 @@
+rules:
+  - id: "TECH-002"
+    name: "Outdated Web Framework Detected"
+    category: "technology"
+    severity: "high"
+    cvss_score: 7.5
+    description: >
+      An outdated web framework or CMS was detected using version
+      information from HTTP headers, HTML meta tags, or file paths.
+      Outdated frameworks may contain known vulnerabilities.
+    impact: >
+      Known vulnerabilities in the detected framework version can be
+      exploited by attackers to compromise the application, access
+      sensitive data, or gain unauthorized access.
+    evidence_description: >
+      A versioned web framework was detected with known security issues.
+    remediation: >
+      Update the web framework to the latest stable version. Establish
+      a patching process to ensure frameworks and CMS platforms are
+      updated promptly when security patches are released.
+    references:
+      - "https://owasp.org/www-project-vulnerable-and-outdated-components/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html"
+      - "https://www.cisa.gov/known-exploited-vulnerabilities"
+    compliance:
+      - framework: "owasp"
+        control_id: "A06"
+        control_name: "Vulnerable and Outdated Components"
+      - framework: "owasp_asvs"
+        control_id: "V10"
+        control_name: "Malicious Code Verification"
+      - framework: "nist"
+        control_id: "ID.RA"
+        control_name: "Risk Assessment"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "RA-3"
+        control_name: "Risk Assessment"
+      - framework: "cis"
+        control_id: "7"
+        control_name: "Continuous Vulnerability Management"
+      - framework: "iso_27001"
+        control_id: "A.8.8"
+        control_name: "Management of Technical Vulnerabilities"
+      - framework: "pci_dss"
+        control_id: "6.2"
+        control_name: "Vulnerability Management"
+      - framework: "soc2"
+        control_id: "CC8.1"
+        control_name: "System Acquisition and Development"
+    cwe:
+      - cwe_id: "CWE-1104"
+        name: "Use of Unmaintained Third-Party Components"
+      - cwe_id: "CWE-937"
+        name: "Using Components with Known Vulnerabilities"
+    capec:
+      - capec_id: "CAPEC-459"
+        name: "Malicious Code Injection in Software"
+      - capec_id: "CAPEC-665"
+        name: "Third Party Credential Interception"

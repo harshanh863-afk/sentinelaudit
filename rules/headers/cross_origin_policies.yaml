@@ -1,0 +1,65 @@
+rules:
+  - id: "HTTP-007"
+    name: "Missing Cross-Origin Security Policies"
+    category: "http_security"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      Cross-Origin-Embedder-Policy, Cross-Origin-Opener-Policy, or
+      Cross-Origin-Resource-Policy headers are not configured. These
+      headers control how the site interacts with cross-origin resources,
+      preventing Spectre-type side-channel attacks.
+    impact: >
+      Without these policies, the site may be vulnerable to cross-origin
+      information leaks through side-channel attacks, and embedding
+      protections are not explicitly defined.
+    evidence_description: >
+      Cross-origin security policy headers were not found.
+    remediation: >
+      Set 'Cross-Origin-Embedder-Policy: require-corp' and
+      'Cross-Origin-Opener-Policy: same-origin' for strong isolation.
+      Set 'Cross-Origin-Resource-Policy' to define which origins may
+      load resources from the site.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V14"
+        control_name: "Configuration Verification"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "http_sec"
+        control_id: "HDR-7"
+        control_name: "Cross-Origin-Embedder-Policy"
+      - framework: "http_sec"
+        control_id: "HDR-8"
+        control_name: "Cross-Origin-Opener-Policy"
+      - framework: "http_sec"
+        control_id: "HDR-9"
+        control_name: "Cross-Origin-Resource-Policy"
+    cwe:
+      - cwe_id: "CWE-346"
+        name: "Origin Validation Error"
+      - cwe_id: "CWE-942"
+        name: "Permissive Cross-domain Policy with Untrusted Domains"
+    capec:
+      - capec_id: "CAPEC-160"
+        name: "Cross-Site Scripting Using Alternate Names"
+      - capec_id: "CAPEC-104"
+        name: "Cross Zone Scripting"

@@ -1,0 +1,49 @@
+rules:
+  - id: "DNS-010"
+    name: "Weak DMARC Policy"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      The DMARC record uses 'p=none' policy, which instructs recipients
+      to take no action on SPF or DKIM failures. While useful for
+      monitoring, p=none provides no actual protection against email
+      spoofing.
+    impact: >
+      Spoofed emails will still be delivered to recipients. The DMARC
+      policy is effectively reporting-only with no enforcement.
+    evidence_description: >
+      The DMARC record policy is 'p=none'.
+    remediation: >
+      After monitoring DMARC reports and verifying legitimate email
+      flows, change the DMARC policy to 'p=quarantine' and eventually
+      'p=reject' for stronger protection.
+    references:
+      - "https://tools.ietf.org/html/rfc7489"
+      - "https://www.dmarc.org/"
+      - "https://www.cisa.gov/resources-tools/services/dmarc"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "DE.CM"
+        control_name: "Continuous Monitoring"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-4"
+        control_name: "DMARC Policy"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

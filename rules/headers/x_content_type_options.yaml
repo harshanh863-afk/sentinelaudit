@@ -1,0 +1,54 @@
+rules:
+  - id: "HTTP-004"
+    name: "Missing X-Content-Type-Options Header"
+    category: "http_security"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      X-Content-Type-Options header is missing. Without this header,
+      browsers may perform MIME type sniffing, interpreting files as
+      a different content type than declared, enabling XSS attacks.
+    impact: >
+      Attackers can upload files that browsers interpret as executable
+      content (HTML, JavaScript), bypassing content-type restrictions
+      and potentially executing malicious scripts in users' browsers.
+    evidence_description: >
+      The X-Content-Type-Options header was absent from the HTTP response.
+    remediation: >
+      Add 'X-Content-Type-Options: nosniff' to all HTTP responses
+      to prevent MIME type sniffing by the browser.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V5"
+        control_name: "Validation, Sanitization and Encoding"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "http_sec"
+        control_id: "HDR-4"
+        control_name: "X-Content-Type-Options"
+    cwe:
+      - cwe_id: "CWE-79"
+        name: "Cross-Site Scripting (XSS)"
+      - cwe_id: "CWE-693"
+        name: "Improper Protection for Output"
+    capec:
+      - capec_id: "CAPEC-63"
+        name: "Cross-Site Scripting (XSS)"
+      - capec_id: "CAPEC-586"
+        name: "HTTP Header Injection"

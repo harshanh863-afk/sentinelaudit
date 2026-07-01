@@ -1,0 +1,57 @@
+rules:
+  - id: "DNS-004"
+    name: "Missing DNSSEC"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.9
+    description: >
+      DNSSEC (DNS Security Extensions) is not enabled for the domain.
+      Without DNSSEC, DNS responses can be forged or tampered with,
+      enabling cache poisoning and DNS spoofing attacks.
+    impact: >
+      Attackers can redirect users to malicious websites by poisoning
+      DNS caches. Users may be unknowingly directed to phishing sites
+      or malicious servers that intercept traffic.
+    evidence_description: >
+      No DNSSEC records (RRSIG, DNSKEY) were found for the domain.
+    remediation: >
+      Enable DNSSEC on the domain by generating signing keys and
+      signing the zone. Publish DS records in the parent zone to
+      establish the chain of trust. Verify DNSSEC configuration
+      using tools like dnsviz.net.
+    references:
+      - "https://www.icann.org/resources/pages/dnssec-what-is-it-why-important"
+      - "https://dnsviz.net/"
+      - "https://tools.ietf.org/html/rfc4033"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "SI-7"
+        control_name: "Software and Information Integrity"
+      - framework: "nist_80053"
+        control_id: "SI-7"
+        control_name: "Software and Information Integrity"
+      - framework: "cis"
+        control_id: "13"
+        control_name: "Network Monitoring and Defense"
+      - framework: "iso_27001"
+        control_id: "A.8.20"
+        control_name: "Networks Security"
+      - framework: "iso_27001"
+        control_id: "A.8.21"
+        control_name: "Security of Network Services"
+      - framework: "dns_sec"
+        control_id: "DNS-1"
+        control_name: "DNSSEC Implementation"
+    cwe:
+      - cwe_id: "CWE-350"
+        name: "Reliance on Reverse DNS"
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-310"
+        name: "DNS Spoofing"
+      - capec_id: "CAPEC-141"
+        name: "Cache Poisoning"

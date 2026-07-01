@@ -1,0 +1,52 @@
+rules:
+  - id: "TLS-005"
+    name: "TLS Certificate Expiring Soon"
+    category: "tls_analysis"
+    severity: "low"
+    cvss_score: 3.7
+    description: >
+      The TLS certificate will expire within 30 days. While still
+      valid, the certificate requires renewal to prevent service
+      disruption and browser security warnings.
+    impact: >
+      If not renewed before expiration, the server will become
+      inaccessible to HTTPS clients and trigger browser warnings,
+      potentially causing service outages and loss of user trust.
+    evidence_description: >
+      The TLS certificate expires within 30 days.
+    remediation: >
+      Renew the TLS certificate before expiration. Set up automated
+      certificate monitoring with alerts at 60, 30, and 14 days before
+      expiry. Consider using automated certificate management like
+      Let's Encrypt with Certbot or ACME protocol.
+    references:
+      - "https://letsencrypt.org/docs/expiration-emails/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "ID.RA"
+        control_name: "Risk Assessment"
+      - framework: "nist_80053"
+        control_id: "SC-12"
+        control_name: "Cryptographic Key Management"
+      - framework: "cis"
+        control_id: "7"
+        control_name: "Continuous Vulnerability Management"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "tls_sec"
+        control_id: "TLS-4"
+        control_name: "Certificate Expiration"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"

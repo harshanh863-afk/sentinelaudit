@@ -1,0 +1,44 @@
+rules:
+  - id: "TECH-003"
+    name: "Infrastructure Technology Fingerprinting"
+    category: "technology"
+    severity: "info"
+    cvss_score: 0.0
+    description: >
+      The infrastructure technology stack was identified, including CDN
+      providers, reverse proxies, and hosting platforms. While not a
+      vulnerability, this information can inform targeted attacks.
+    impact: >
+      Information about the infrastructure stack helps attackers select
+      appropriate exploit techniques and identify potential weak points.
+    evidence_description: >
+      Infrastructure technologies (CDN, reverse proxy, hosting) were detected.
+    remediation: >
+      Review the need for each detected infrastructure component. While
+      detection is often unavoidable, ensure all infrastructure
+      components are properly configured with security best practices.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Infrastructure_Management_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "ID.AM"
+        control_name: "Asset Management"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "1"
+        control_name: "Inventory and Control of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.5.9"
+        control_name: "Inventory of Information"
+    cwe:
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"

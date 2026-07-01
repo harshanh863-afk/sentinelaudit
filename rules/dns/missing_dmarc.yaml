@@ -1,0 +1,67 @@
+rules:
+  - id: "DNS-002"
+    name: "Missing DMARC Record"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 6.1
+    description: >
+      No Domain-based Message Authentication, Reporting, and Conformance
+      (DMARC) record was found for the domain. Without DMARC, attackers
+      can spoof emails from the domain, and domain owners have no visibility
+      into who is sending email on their behalf.
+    impact: >
+      Attackers can send phishing emails that appear to originate from
+      the domain, potentially defrauding customers, partners, and employees.
+      The organization has no reporting mechanism to detect email spoofing.
+    evidence_description: >
+      No DMARC TXT record was found at _dmarc.domain.com.
+    remediation: >
+      Publish a DMARC record at '_dmarc.domain.com' with a policy of
+      'quarantine' or 'reject'. Start with 'p=none' to monitor, then
+      move to 'p=quarantine' and finally 'p=reject' as confidence grows.
+      Include 'rua=' and 'ruf=' tags to receive aggregate and forensic reports.
+    references:
+      - "https://tools.ietf.org/html/rfc7489"
+      - "https://dmarc.org/"
+      - "https://www.cisa.gov/resources-tools/services/dmarc"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "owasp_asvs"
+        control_id: "V10"
+        control_name: "Malicious Code Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+      - framework: "soc2"
+        control_id: "CC6.7"
+        control_name: "Data Transmission Protection"
+      - framework: "dns_sec"
+        control_id: "DNS-4"
+        control_name: "DMARC Policy"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+      - cwe_id: "CWE-290"
+        name: "Authentication Bypass by Spoofing"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"
+      - capec_id: "CAPEC-310"
+        name: "DNS Spoofing"

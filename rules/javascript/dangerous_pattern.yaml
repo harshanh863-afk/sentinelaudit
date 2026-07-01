@@ -1,0 +1,71 @@
+rules:
+  - id: "JS-003"
+    name: "Dangerous JavaScript Pattern Detected"
+    category: "javascript"
+    severity: "high"
+    cvss_score: 7.3
+    description: >
+      Dangerous JavaScript patterns (eval, innerHTML, document.write)
+      were detected in client-side code. These patterns can lead to
+      XSS vulnerabilities if used with untrusted data.
+    impact: >
+      If user-supplied data reaches these dangerous functions, attackers
+      can execute arbitrary JavaScript in the context of the user's
+      session, leading to data theft, session hijacking, or malware
+      delivery.
+    evidence_description: >
+      Dangerous JavaScript APIs (eval, innerHTML, etc.) were detected.
+    remediation: >
+      Replace eval() with JSON.parse() for data parsing. Use
+      textContent instead of innerHTML for inserting text. Avoid
+      document.write() entirely. Use trusted templating engines
+      that automatically escape output.
+    references:
+      - "https://owasp.org/www-community/attacks/Direct_Dynamic_Code_Evaluation"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html"
+      - "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval"
+    compliance:
+      - framework: "owasp"
+        control_id: "A03"
+        control_name: "Injection"
+      - framework: "owasp_asvs"
+        control_id: "V5"
+        control_name: "Validation, Sanitization and Encoding"
+      - framework: "owasp_api"
+        control_id: "API10"
+        control_name: "Unsafe Consumption of APIs"
+      - framework: "nist"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "nist_80053"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "cis"
+        control_id: "16"
+        control_name: "Application Software Security"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "pci_dss"
+        control_id: "6.1"
+        control_name: "Secure Development"
+      - framework: "gdpr"
+        control_id: "Art.25"
+        control_name: "Data Protection by Design"
+      - framework: "soc2"
+        control_id: "CC8.1"
+        control_name: "System Acquisition and Development"
+    cwe:
+      - cwe_id: "CWE-79"
+        name: "Cross-Site Scripting (XSS)"
+      - cwe_id: "CWE-95"
+        name: "Eval Injection"
+      - cwe_id: "CWE-94"
+        name: "Code Injection"
+    capec:
+      - capec_id: "CAPEC-63"
+        name: "Cross-Site Scripting (XSS)"
+      - capec_id: "CAPEC-35"
+        name: "Eval Injection"
+      - capec_id: "CAPEC-104"
+        name: "Cross Zone Scripting"

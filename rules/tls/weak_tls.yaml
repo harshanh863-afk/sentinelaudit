@@ -1,0 +1,76 @@
+rules:
+  - id: "TLS-001"
+    name: "Weak TLS Protocol Version"
+    category: "tls_analysis"
+    severity: "high"
+    cvss_score: 7.4
+    description: >
+      The server accepts connections using TLS 1.0 or TLS 1.1.
+      Both protocols are deprecated by major standards bodies (NIST, PCI SSC)
+      and contain known vulnerabilities including BEAST and POODLE attacks.
+      TLS 1.2 and 1.3 are the only recommended protocol versions.
+    impact: >
+      An attacker can exploit weaknesses in deprecated TLS protocols to
+      decrypt traffic, steal session cookies, or perform man-in-the-middle
+      attacks against users connecting to the server.
+    evidence_description: >
+      The server accepted connections using TLS 1.0 or TLS 1.1 during the scan.
+    remediation: >
+      Disable TLS 1.0 and TLS 1.1 on the server. Configure the server
+      to accept only TLS 1.2 and TLS 1.3. Review all client compatibility
+      before disabling older versions. Use tools like SSL Labs to verify
+      the configuration after changes.
+    references:
+      - "https://owasp.org/www-project-transport-layer-protection/"
+      - "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-52r2.pdf"
+      - "https://www.ssllabs.com/ssltest/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist"
+        control_id: "SC-8(1)"
+        control_name: "Cryptographic or Alternate Physical Protection"
+      - framework: "nist_80053"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.1"
+        control_name: "Strong Cryptography"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+      - framework: "hipaa"
+        control_id: "164.312(e)(1)"
+        control_name: "Transmission Security"
+      - framework: "soc2"
+        control_id: "CC6.7"
+        control_name: "Data Transmission Protection"
+      - framework: "tls_sec"
+        control_id: "TLS-1"
+        control_name: "TLS 1.2 Minimum Version"
+      - framework: "tls_sec"
+        control_id: "TLS-2"
+        control_name: "TLS 1.3 Recommended"
+    cwe:
+      - cwe_id: "CWE-326"
+        name: "Inadequate Encryption Strength"
+      - cwe_id: "CWE-327"
+        name: "Use of a Broken or Risky Cryptographic Algorithm"
+    capec:
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"
+      - capec_id: "CAPEC-74"
+        name: "Man-in-the-Middle TLS Attack"

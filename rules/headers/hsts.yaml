@@ -1,0 +1,82 @@
+rules:
+  - id: "HTTP-001"
+    name: "Missing Strict-Transport-Security"
+    category: "http_security"
+    severity: "medium"
+    cvss_score: 6.5
+    description: >
+      The HTTP Strict-Transport-Security (HSTS) header is not present
+      in server responses. Without HSTS, the application is vulnerable
+      to protocol downgrade attacks (SSL stripping) and cookie hijacking
+      through man-in-the-middle attacks on plaintext connections.
+    impact: >
+      Attackers can intercept and modify traffic between the browser and
+      the server, potentially stealing session cookies, credentials, or
+      injecting malicious content into the response.
+    evidence_description: >
+      The Strict-Transport-Security header was absent from the HTTP response.
+    remediation: >
+      Add the Strict-Transport-Security header to all HTTPS responses
+      with a minimum max-age of 31536000 seconds (1 year). Include the
+      'includeSubDomains' directive if all subdomains support HTTPS.
+      Consider adding 'preload' and submitting to browser preload lists.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html"
+      - "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-52r2.pdf"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "owasp_api"
+        control_id: "API8"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "nist_80053"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.20"
+        control_name: "Networks Security"
+      - framework: "pci_dss"
+        control_id: "4.1"
+        control_name: "Strong Cryptography"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+      - framework: "hipaa"
+        control_id: "164.312(e)(1)"
+        control_name: "Transmission Security"
+      - framework: "soc2"
+        control_id: "CC6.7"
+        control_name: "Data Transmission Protection"
+      - framework: "http_sec"
+        control_id: "HDR-2"
+        control_name: "Strict-Transport-Security"
+      - framework: "tls_sec"
+        control_id: "TLS-8"
+        control_name: "HSTS Preload Readiness"
+    cwe:
+      - cwe_id: "CWE-319"
+        name: "Cleartext Transmission of Sensitive Information"
+      - cwe_id: "CWE-1275"
+        name: "HSTS Missing"
+    capec:
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"
+      - capec_id: "CAPEC-102"
+        name: "Session Sidejacking"
+      - capec_id: "CAPEC-157"
+        name: "Sniffing Attacks"

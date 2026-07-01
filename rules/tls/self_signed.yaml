@@ -1,0 +1,55 @@
+rules:
+  - id: "TLS-003"
+    name: "Self-Signed TLS Certificate"
+    category: "tls_analysis"
+    severity: "high"
+    cvss_score: 7.4
+    description: >
+      The server is using a self-signed TLS certificate that is not
+      issued by a trusted Certificate Authority (CA). Browsers and
+      clients will display untrusted certificate warnings.
+    impact: >
+      Users cannot verify the server's identity. The connection is
+      vulnerable to man-in-the-middle attacks as there is no trust
+      chain back to a recognized root CA.
+    evidence_description: >
+      The TLS certificate is self-signed (issuer equals subject).
+    remediation: >
+      Replace the self-signed certificate with a certificate issued
+      by a trusted CA such as Let's Encrypt, DigiCert, or Sectigo.
+      Use automated certificate management tools like Certbot.
+    references:
+      - "https://owasp.org/www-project-transport-layer-protection/"
+      - "https://letsencrypt.org/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist_80053"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "tls_sec"
+        control_id: "TLS-3"
+        control_name: "Certificate Validation"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"

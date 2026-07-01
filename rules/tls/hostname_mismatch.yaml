@@ -1,0 +1,56 @@
+rules:
+  - id: "TLS-007"
+    name: "TLS Certificate Hostname Mismatch"
+    category: "tls_analysis"
+    severity: "critical"
+    cvss_score: 8.2
+    description: >
+      The TLS certificate's Common Name (CN) or Subject Alternative Names
+      (SANs) do not match the hostname being accessed. This indicates
+      a misconfiguration or active man-in-the-middle attack.
+    impact: >
+      Browsers will display security warnings and block the connection.
+      Users cannot verify they are connecting to the legitimate server,
+      making the connection vulnerable to active interception.
+    evidence_description: >
+      The certificate hostname does not match the target server hostname.
+    remediation: >
+      Ensure the TLS certificate includes the correct hostname in the
+      CN or SAN fields. If using a wildcard certificate, verify it
+      covers the required subdomain level.
+    references:
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html"
+      - "https://tools.ietf.org/html/rfc6125"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist_80053"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "tls_sec"
+        control_id: "TLS-3"
+        control_name: "Certificate Validation"
+    cwe:
+      - cwe_id: "CWE-297"
+        name: "Improper Validation of Certificate with Host Mismatch"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"

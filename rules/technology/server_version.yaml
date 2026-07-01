@@ -1,0 +1,62 @@
+rules:
+  - id: "TECH-001"
+    name: "Exposed Server Version Banner"
+    category: "technology"
+    severity: "low"
+    cvss_score: 3.7
+    description: >
+      The server version string is exposed in HTTP response headers.
+      This information helps attackers identify specific vulnerabilities
+      associated with the server software and version.
+    impact: >
+      Attackers can use version information to target known exploits
+      for the specific server software and version, reducing the effort
+      required to compromise the server.
+    evidence_description: >
+      Server version was detected in HTTP response headers.
+    remediation: >
+      Configure the server to hide version information from response
+      headers. For Apache, set 'ServerTokens Prod' and 'ServerSignature
+      Off'. For Nginx, set 'server_tokens off'. For IIS, remove the
+      Server header using URL Rewrite rules.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V14"
+        control_name: "Configuration Verification"
+      - framework: "owasp_api"
+        control_id: "API8"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.9"
+        control_name: "Configuration Management"
+      - framework: "pci_dss"
+        control_id: "2.1"
+        control_name: "System Configuration Management"
+      - framework: "http_sec"
+        control_id: "HDR-10"
+        control_name: "Cache-Control"
+    cwe:
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+      - cwe_id: "CWE-16"
+        name: "Configuration"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"
+      - capec_id: "CAPEC-459"
+        name: "Malicious Code Injection in Software"

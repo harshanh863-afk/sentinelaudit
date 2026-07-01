@@ -1,0 +1,47 @@
+rules:
+  - id: "DNS-008"
+    name: "SPF Record Missing Hard Fail"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      The SPF record uses '~all' (soft fail) instead of '-all' (hard fail).
+      Soft fail indicates that unauthorized senders should be marked
+      as suspicious but not rejected, providing weaker protection.
+    impact: >
+      Spoofed emails may still be delivered to recipients since soft
+      fail policies allow receiving servers to accept the message
+      despite SPF failure.
+    evidence_description: >
+      The SPF record uses '~all' (soft fail) instead of '-all' (hard fail).
+    remediation: >
+      Upgrade the SPF record to use '-all' (hard fail) after verifying
+      all legitimate mail servers are properly included in the SPF record.
+    references:
+      - "https://tools.ietf.org/html/rfc7208"
+      - "https://www.dmarc.org/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-6"
+        control_name: "SPF Hard Fail"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

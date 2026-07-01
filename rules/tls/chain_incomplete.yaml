@@ -1,0 +1,55 @@
+rules:
+  - id: "TLS-006"
+    name: "Incomplete TLS Certificate Chain"
+    category: "tls_analysis"
+    severity: "medium"
+    cvss_score: 6.1
+    description: >
+      The server did not present a complete TLS certificate chain.
+      Intermediate CA certificates were not included, which may cause
+      some clients to fail certificate validation if they lack the
+      intermediate CA in their trust store.
+    impact: >
+      Some browsers and clients may reject the connection due to
+      incomplete chain validation, causing intermittent access issues
+      for users and automated systems.
+    evidence_description: >
+      The server's TLS certificate chain is missing intermediate CA certificates.
+    remediation: >
+      Configure the server to send the full certificate chain including
+      all intermediate CA certificates. Verify the configuration using
+      tools like SSL Labs or OpenSSL s_client.
+    references:
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html"
+      - "https://www.ssllabs.com/ssltest/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V9"
+        control_name: "Communications Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist_80053"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "tls_sec"
+        control_id: "TLS-5"
+        control_name: "Certificate Chain Completeness"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"

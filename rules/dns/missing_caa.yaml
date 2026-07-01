@@ -1,0 +1,55 @@
+rules:
+  - id: "DNS-005"
+    name: "Missing CAA Record"
+    category: "dns_analysis"
+    severity: "low"
+    cvss_score: 2.6
+    description: >
+      No Certification Authority Authorization (CAA) DNS record was found
+      for the domain. CAA records specify which certificate authorities
+      are authorized to issue certificates for the domain.
+    impact: >
+      Without CAA records, any CA can issue certificates for the domain,
+      increasing the risk of mis-issued certificates that could be used
+      for man-in-the-middle attacks.
+    evidence_description: >
+      No CAA DNS record was found for the domain.
+    remediation: >
+      Publish CAA records specifying which CAs are authorized to issue
+      certificates. For example, '0 issue "letsencrypt.org"' to restrict
+      issuance to Let's Encrypt.
+    references:
+      - "https://tools.ietf.org/html/rfc6844"
+      - "https://www.ssllabs.com/ssltest/"
+      - "https://cabforum.org/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "ID.AM"
+        control_name: "Asset Management"
+      - framework: "nist_80053"
+        control_id: "SC-12"
+        control_name: "Cryptographic Key Management"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+      - framework: "dns_sec"
+        control_id: "DNS-5"
+        control_name: "CAA Record"
+      - framework: "dns_sec"
+        control_id: "DNS-7"
+        control_name: "CAA IssueWild"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"

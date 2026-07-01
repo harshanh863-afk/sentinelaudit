@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinelaudit-scanner"
+version = "0.1.0"
+description = "Security scanning engine for SentinelAudit"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.26.0",
+    "pyyaml>=6.0.1",
+    "pydantic>=2.5.0",
+]

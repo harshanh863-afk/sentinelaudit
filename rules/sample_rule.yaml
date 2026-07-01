@@ -1,0 +1,265 @@
+rules:
+  - id: "HTTP-001"
+    name: "Missing Strict-Transport-Security"
+    category: "http_security"
+    severity: "medium"
+    cvss_score: 6.5
+    description: >
+      The Strict-Transport-Security header is not set,
+      making the application vulnerable to protocol downgrade attacks.
+    impact: >
+      Attackers can intercept and modify traffic between the browser and
+      the server through SSL stripping attacks.
+    evidence_description: >
+      The Strict-Transport-Security header was absent from the response.
+    remediation: >
+      Add the Strict-Transport-Security header to all responses
+      with a minimum max-age of 31536000 seconds.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "nist"
+        control_id: "SC-8"
+        control_name: "Transmission Confidentiality and Integrity"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration"
+    cwe:
+      - cwe_id: "CWE-319"
+        name: "Cleartext Transmission of Sensitive Information"
+    capec:
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"
+
+  - id: "HTTP-002"
+    name: "Missing Content-Security-Policy"
+    category: "http_security"
+    severity: "high"
+    cvss_score: 7.5
+    description: >
+      Content-Security-Policy header is missing, increasing
+      the risk of XSS and data injection attacks.
+    impact: >
+      An attacker can inject malicious scripts into the page,
+      leading to data theft and session hijacking.
+    evidence_description: >
+      The Content-Security-Policy header was absent from the response.
+    remediation: >
+      Define and enforce a Content-Security-Policy header
+      that restricts resource loading origins.
+    references:
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "cis"
+        control_id: "16"
+        control_name: "Application Software Security"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+    cwe:
+      - cwe_id: "CWE-693"
+        name: "Improper Protection for Output"
+    capec:
+      - capec_id: "CAPEC-63"
+        name: "Cross-Site Scripting (XSS)"
+
+  - id: "TLS-001"
+    name: "Weak TLS Protocol Version"
+    category: "tls_analysis"
+    severity: "high"
+    cvss_score: 7.4
+    description: >
+      Server supports TLS 1.0 or 1.1, which are deprecated
+      and vulnerable to multiple attacks.
+    impact: >
+      Attackers can exploit protocol weaknesses to decrypt
+      traffic or perform man-in-the-middle attacks.
+    evidence_description: >
+      The server accepted TLS 1.0 or 1.1 connections.
+    remediation: >
+      Disable TLS 1.0 and 1.1 on the server. Enforce
+      TLS 1.2 or TLS 1.3 as the minimum protocol version.
+    references:
+      - "https://owasp.org/www-project-transport-layer-protection/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "nist"
+        control_id: "SC-8(1)"
+        control_name: "Cryptographic Protection"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Cryptographic Controls"
+      - framework: "pci_dss"
+        control_id: "4.1"
+        control_name: "Strong Cryptography"
+    cwe:
+      - cwe_id: "CWE-326"
+        name: "Inadequate Encryption Strength"
+    capec:
+      - capec_id: "CAPEC-94"
+        name: "Man in the Middle Attack"
+
+  - id: "TLS-002"
+    name: "Expired TLS Certificate"
+    category: "tls_analysis"
+    severity: "critical"
+    cvss_score: 9.1
+    description: >
+      The TLS certificate presented by the server has expired.
+    impact: >
+      Users receive browser warnings and the connection's
+      authenticity cannot be verified.
+    evidence_description: >
+      The TLS certificate's validity period has ended.
+    remediation: >
+      Renew the TLS certificate immediately and verify
+      the new certificate is correctly installed.
+    references:
+      - "https://owasp.org/www-project-transport-layer-protection/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "nist"
+        control_id: "SC-12"
+        control_name: "Cryptographic Key Management"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration"
+      - framework: "iso_27001"
+        control_id: "A.8.24"
+        control_name: "Use of Cryptography"
+      - framework: "pci_dss"
+        control_id: "4.2"
+        control_name: "Certificate Management"
+    cwe:
+      - cwe_id: "CWE-295"
+        name: "Improper Certificate Validation"
+    capec:
+      - capec_id: "CAPEC-491"
+        name: "Bypassing Certificate Validation"
+
+  - id: "DNS-001"
+    name: "Missing SPF Record"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.6
+    description: >
+      No SPF DNS record found. The domain may be
+      susceptible to email spoofing.
+    impact: >
+      Attackers can send spoofed emails appearing
+      to originate from the domain.
+    evidence_description: >
+      No SPF TXT record was found for the domain.
+    remediation: >
+      Publish an SPF record specifying authorized
+      mail servers for the domain.
+    references:
+      - "https://tools.ietf.org/html/rfc7208"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"
+
+  - id: "DNS-002"
+    name: "Missing DMARC Record"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 6.1
+    description: >
+      No DMARC policy found. Without DMARC, attackers
+      can spoof emails from the domain.
+    impact: >
+      Attackers can send phishing emails appearing to
+      come from the organization's domain.
+    evidence_description: >
+      No DMARC TXT record was found.
+    remediation: >
+      Publish a DMARC record with a policy of
+      at least 'quarantine' or 'reject'.
+    references:
+      - "https://tools.ietf.org/html/rfc7489"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"
+
+  - id: "VULN-001"
+    name: "Exposed Server Version Banner"
+    category: "technology"
+    severity: "low"
+    cvss_score: 3.7
+    description: >
+      Server version string is exposed in HTTP headers,
+      aiding attackers in targeting known vulnerabilities.
+    impact: >
+      Attackers can use version information to select
+      appropriate exploit techniques.
+    evidence_description: >
+      Server version was found in HTTP response headers.
+    remediation: >
+      Configure the server to hide version information
+      from response headers.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration"
+      - framework: "iso_27001"
+        control_id: "A.8.9"
+        control_name: "Configuration Management"
+    cwe:
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"

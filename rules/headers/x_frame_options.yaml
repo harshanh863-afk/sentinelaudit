@@ -1,0 +1,56 @@
+rules:
+  - id: "HTTP-003"
+    name: "Missing X-Frame-Options Header"
+    category: "http_security"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      X-Frame-Options header is missing from responses. Without this
+      header, the site can be embedded in frames on other domains,
+      making it vulnerable to clickjacking attacks.
+    impact: >
+      Attackers can create transparent overlays on malicious pages
+      that trick users into clicking on elements of the target site,
+      potentially performing unauthorized actions or stealing data.
+    evidence_description: >
+      The X-Frame-Options header was absent from the HTTP response.
+    remediation: >
+      Add 'X-Frame-Options: DENY' or 'X-Frame-Options: SAMEORIGIN'
+      to all HTTP responses. Use 'DENY' if the site should never be
+      framed, or 'SAMEORIGIN' if framing is needed on the same domain.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V14"
+        control_name: "Configuration Verification"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "16"
+        control_name: "Application Software Security"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "http_sec"
+        control_id: "HDR-3"
+        control_name: "X-Frame-Options"
+    cwe:
+      - cwe_id: "CWE-1021"
+        name: "Improper Restriction of Rendered UI Layers or Frames"
+      - cwe_id: "CWE-693"
+        name: "Improper Protection for Output"
+    capec:
+      - capec_id: "CAPEC-103"
+        name: "Clickjacking"
+      - capec_id: "CAPEC-506"
+        name: "Framing Vulnerabilities"

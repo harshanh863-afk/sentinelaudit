@@ -1,0 +1,52 @@
+rules:
+  - id: "JS-004"
+    name: "JavaScript Library Version Detection"
+    category: "javascript"
+    severity: "low"
+    cvss_score: 2.1
+    description: >
+      Client-side JavaScript libraries were detected with version
+      information. Old or vulnerable library versions may contain
+      known security issues that can be exploited.
+    impact: >
+      Vulnerable JavaScript libraries can be exploited through XSS,
+      prototype pollution, or other framework-specific attacks,
+      potentially compromising user sessions and data.
+    evidence_description: >
+      Versioned JavaScript libraries were detected in the page.
+    remediation: >
+      Regularly update client-side JavaScript libraries to the latest
+      versions. Use Subresource Integrity (SRI) hashes for CDN-loaded
+      libraries to ensure they have not been tampered with.
+    references:
+      - "https://owasp.org/www-project-vulnerable-and-outdated-components/"
+      - "https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A06"
+        control_name: "Vulnerable and Outdated Components"
+      - framework: "owasp_asvs"
+        control_id: "V12"
+        control_name: "File and Resources Verification"
+      - framework: "nist"
+        control_id: "ID.RA"
+        control_name: "Risk Assessment"
+      - framework: "nist_80053"
+        control_id: "RA-3"
+        control_name: "Risk Assessment"
+      - framework: "cis"
+        control_id: "7"
+        control_name: "Continuous Vulnerability Management"
+      - framework: "iso_27001"
+        control_id: "A.8.8"
+        control_name: "Management of Technical Vulnerabilities"
+      - framework: "pci_dss"
+        control_id: "6.2"
+        control_name: "Vulnerability Management"
+    cwe:
+      - cwe_id: "CWE-1104"
+        name: "Use of Unmaintained Third-Party Components"
+    capec:
+      - capec_id: "CAPEC-459"
+        name: "Malicious Code Injection in Software"

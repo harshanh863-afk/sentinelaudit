@@ -1,0 +1,86 @@
+rules:
+  - id: "COOKIE-001"
+    name: "Insecure Cookie Configuration"
+    category: "http_security"
+    severity: "high"
+    cvss_score: 7.3
+    description: >
+      Cookies are set without the Secure, HttpOnly, or SameSite attributes.
+      Without these flags, cookies can be transmitted over unencrypted HTTP
+      connections (Secure), accessed by client-side scripts (HttpOnly),
+      or sent in cross-site requests (SameSite), increasing the risk of
+      session hijacking, XSS-based cookie theft, and CSRF attacks.
+    impact: >
+      An attacker can steal session cookies through network sniffing or
+      XSS attacks, impersonate authenticated users, or perform
+      cross-site request forgery against authenticated sessions.
+    evidence_description: >
+      Cookies were detected without required security attributes.
+    remediation: >
+      Set the 'Secure' flag on all cookies to restrict transmission to
+      HTTPS. Set 'HttpOnly' to prevent JavaScript access to session cookies.
+      Set 'SameSite=Lax' or 'SameSite=Strict' to control cross-site
+      request behaviour. Review all cookie-setting code in the application.
+    references:
+      - "https://owasp.org/www-community/controls/SecureCookieAttribute"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+      - "https://tools.ietf.org/html/rfc6265"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V3"
+        control_name: "Session Management Verification"
+      - framework: "owasp_api"
+        control_id: "API2"
+        control_name: "Broken Authentication"
+      - framework: "nist"
+        control_id: "PR.AC"
+        control_name: "Access Control"
+      - framework: "nist_80053"
+        control_id: "AC-3"
+        control_name: "Access Enforcement"
+      - framework: "cis"
+        control_id: "16"
+        control_name: "Application Software Security"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "pci_dss"
+        control_id: "4.1"
+        control_name: "Strong Cryptography"
+      - framework: "hipaa"
+        control_id: "164.312(a)(1)"
+        control_name: "Access Control"
+      - framework: "soc2"
+        control_id: "CC6.1"
+        control_name: "Logical and Physical Access"
+      - framework: "cookie_sec"
+        control_id: "COOKIE-1"
+        control_name: "Secure Flag"
+      - framework: "cookie_sec"
+        control_id: "COOKIE-2"
+        control_name: "HttpOnly Flag"
+      - framework: "cookie_sec"
+        control_id: "COOKIE-3"
+        control_name: "SameSite Attribute"
+    cwe:
+      - cwe_id: "CWE-614"
+        name: "Sensitive Cookie in HTTPS Session Without 'Secure' Attribute"
+      - cwe_id: "CWE-1004"
+        name: "Sensitive Cookie Without 'HttpOnly'"
+      - cwe_id: "CWE-352"
+        name: "Cross-Site Request Forgery (CSRF)"
+      - cwe_id: "CWE-79"
+        name: "Cross-Site Scripting (XSS)"
+    capec:
+      - capec_id: "CAPEC-102"
+        name: "Session Sidejacking"
+      - capec_id: "CAPEC-121"
+        name: "Session Hijacking"
+      - capec_id: "CAPEC-62"
+        name: "Cross-Site Request Forgery"
+      - capec_id: "CAPEC-63"
+        name: "Cross-Site Scripting (XSS)"

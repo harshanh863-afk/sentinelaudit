@@ -1,0 +1,63 @@
+rules:
+  - id: "HTTP-005"
+    name: "Missing Referrer-Policy Header"
+    category: "http_security"
+    severity: "low"
+    cvss_score: 2.6
+    description: >
+      Referrer-Policy header is missing from responses. Without a
+      referrer policy, browsers may leak the full URL including
+      sensitive parameters in the Referer header to external sites.
+    impact: >
+      URL parameters containing session tokens, API keys, or personal
+      information may be leaked to third-party sites when users click
+      external links or load external resources.
+    evidence_description: >
+      The Referrer-Policy header was absent from the HTTP response.
+    remediation: >
+      Add 'Referrer-Policy: strict-origin-when-cross-origin' or
+      'Referrer-Policy: no-referrer' to all HTTP responses to control
+      how much referrer information is shared with external sites.
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A02"
+        control_name: "Cryptographic Failures"
+      - framework: "owasp_asvs"
+        control_id: "V8"
+        control_name: "Data Protection Verification"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+      - framework: "ccpa"
+        control_id: "1798.130"
+        control_name: "Security Practices"
+      - framework: "hipaa"
+        control_id: "164.312(c)(1)"
+        control_name: "Integrity Controls"
+      - framework: "http_sec"
+        control_id: "HDR-5"
+        control_name: "Referrer-Policy"
+    cwe:
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+      - cwe_id: "CWE-526"
+        name: "Information Exposure through Environmental Variables"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"

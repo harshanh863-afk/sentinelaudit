@@ -1,0 +1,48 @@
+rules:
+  - id: "DNS-006"
+    name: "SPF Record Allows All Senders"
+    category: "dns_analysis"
+    severity: "high"
+    cvss_score: 7.5
+    description: >
+      The SPF record contains '?all' (neutral) which effectively allows
+      any server to send email on behalf of the domain without restriction.
+      This provides no protection against email spoofing.
+    impact: >
+      Any server can send spoofed emails appearing to come from the domain.
+      Recipients have no way to authenticate legitimate email senders,
+      enabling effective phishing attacks.
+    evidence_description: >
+      The SPF record includes a neutral '?all' mechanism.
+    remediation: >
+      Replace '?all' with '-all' (hard fail) in the SPF record after
+      verifying that all legitimate mail servers are included in the
+      SPF allowlist.
+    references:
+      - "https://tools.ietf.org/html/rfc7208"
+      - "https://www.dmarc.org/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-6"
+        control_name: "SPF Hard Fail"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

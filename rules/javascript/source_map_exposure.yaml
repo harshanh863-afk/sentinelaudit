@@ -1,0 +1,62 @@
+rules:
+  - id: "JS-001"
+    name: "Source Map Exposure"
+    category: "javascript"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      JavaScript source map files (.map) are exposed and accessible.
+      Source maps reveal the original source code, including comments,
+      internal APIs, and development logic that should remain private.
+    impact: >
+      Attackers can reconstruct the original application source code,
+      revealing business logic, API endpoints, authentication flows,
+      and potentially hardcoded secrets or internal system details.
+    evidence_description: >
+      Source map files were accessible on the server.
+    remediation: >
+      Disable source map generation in production builds, or configure
+      the web server to deny access to .map files. For existing source
+      maps, remove them from the production server.
+    references:
+      - "https://owasp.org/www-project-top-ten/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/SourceMap"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V14"
+        control_name: "Configuration Verification"
+      - framework: "nist"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.9"
+        control_name: "Configuration Management"
+      - framework: "pci_dss"
+        control_id: "2.1"
+        control_name: "System Configuration Management"
+      - framework: "gdpr"
+        control_id: "Art.32"
+        control_name: "Security of Processing"
+      - framework: "http_sec"
+        control_id: "HDR-10"
+        control_name: "Cache-Control"
+    cwe:
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+      - cwe_id: "CWE-540"
+        name: "Source Code Disclosure"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"
+      - capec_id: "CAPEC-459"
+        name: "Malicious Code Injection in Software"

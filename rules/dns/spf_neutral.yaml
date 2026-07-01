@@ -1,0 +1,47 @@
+rules:
+  - id: "DNS-007"
+    name: "SPF Record Uses Neutral Policy"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.3
+    description: >
+      The SPF record uses a neutral policy '?all' instead of a hard
+      fail '-all' mechanism. Neutral policies provide no clear signal
+      to receiving mail servers about how to handle unauthorized senders.
+    impact: >
+      Recipients may still deliver spoofed emails since the neutral
+      policy gives no instruction to reject unauthorized senders.
+    evidence_description: >
+      The SPF record uses '?all' (neutral) mechanism.
+    remediation: >
+      Change the SPF record to use '-all' (hard fail) after confirming
+      all legitimate sending sources are included. If unsure, monitor
+      DMARC reports before enforcing hard fail.
+    references:
+      - "https://tools.ietf.org/html/rfc7208"
+      - "https://www.dmarc.org/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-6"
+        control_name: "SPF Hard Fail"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"

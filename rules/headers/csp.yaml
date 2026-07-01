@@ -1,0 +1,78 @@
+rules:
+  - id: "HTTP-002"
+    name: "Missing Content-Security-Policy"
+    category: "http_security"
+    severity: "high"
+    cvss_score: 7.5
+    description: >
+      Content-Security-Policy header is missing from HTTP responses.
+      Without CSP, the application is vulnerable to cross-site scripting (XSS),
+      clickjacking, and other code injection attacks because the browser
+      has no restrictions on which resources can be loaded or executed.
+    impact: >
+      An attacker can inject malicious scripts, styles, or other resources
+      into the page, leading to data theft, session hijacking, defacement,
+      or redirection to malicious sites.
+    evidence_description: >
+      The Content-Security-Policy header was absent from the HTTP response.
+    remediation: >
+      Implement a Content-Security-Policy header that restricts resource
+      loading origins. Start with a restrictive policy such as
+      "default-src 'self'" and iteratively relax as needed. Use 'report-uri'
+      or 'report-to' directives to monitor policy violations in production.
+    references:
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"
+      - "https://owasp.org/www-community/controls/Content_Security_Policy"
+      - "https://content-security-policy.com/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V5"
+        control_name: "Validation, Sanitization and Encoding"
+      - framework: "owasp_api"
+        control_id: "API8"
+        control_name: "Security Misconfiguration"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "nist_80053"
+        control_id: "SI-10"
+        control_name: "Information Input Validation"
+      - framework: "cis"
+        control_id: "16"
+        control_name: "Application Software Security"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "pci_dss"
+        control_id: "6.1"
+        control_name: "Secure Development"
+      - framework: "gdpr"
+        control_id: "Art.25"
+        control_name: "Data Protection by Design"
+      - framework: "soc2"
+        control_id: "CC6.1"
+        control_name: "Logical and Physical Access"
+      - framework: "http_sec"
+        control_id: "HDR-1"
+        control_name: "Content-Security-Policy"
+    cwe:
+      - cwe_id: "CWE-693"
+        name: "Improper Protection for Output"
+      - cwe_id: "CWE-1021"
+        name: "Improper Restriction of Rendered UI Layers or Frames"
+      - cwe_id: "CWE-79"
+        name: "Cross-Site Scripting (XSS)"
+    capec:
+      - capec_id: "CAPEC-63"
+        name: "Cross-Site Scripting (XSS)"
+      - capec_id: "CAPEC-104"
+        name: "Cross Zone Scripting"
+      - capec_id: "CAPEC-586"
+        name: "HTTP Header Injection"

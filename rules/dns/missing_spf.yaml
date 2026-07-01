@@ -1,0 +1,55 @@
+rules:
+  - id: "DNS-001"
+    name: "Missing SPF Record"
+    category: "dns_analysis"
+    severity: "medium"
+    cvss_score: 5.6
+    description: >
+      No SPF (Sender Policy Framework) DNS record was found for the domain.
+      Without SPF, any server can send emails that appear to come from the
+      domain, enabling email spoofing and phishing attacks.
+    impact: >
+      Attackers can forge email from the domain, increasing the success
+      rate of phishing campaigns against customers, partners, and employees.
+    evidence_description: >
+      No SPF TXT record was found for the domain.
+    remediation: >
+      Publish an SPF record specifying authorized mail servers for the
+      domain. Use a hard fail mechanism (-all) for stricter enforcement.
+      Note that SPF alone is not sufficient; combine with DKIM and DMARC.
+    references:
+      - "https://tools.ietf.org/html/rfc7208"
+      - "https://www.dmarc.org/"
+      - "https://www.cisa.gov/resources-tools/services/dmarc"
+    compliance:
+      - framework: "owasp"
+        control_id: "A08"
+        control_name: "Software and Data Integrity Failures"
+      - framework: "nist"
+        control_id: "PR.DS"
+        control_name: "Data Security"
+      - framework: "nist"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "nist_80053"
+        control_id: "SC-7"
+        control_name: "Boundary Protection"
+      - framework: "cis"
+        control_id: "9"
+        control_name: "Email and Web Browser Protections"
+      - framework: "iso_27001"
+        control_id: "A.8.23"
+        control_name: "Web Filtering"
+      - framework: "dns_sec"
+        control_id: "DNS-2"
+        control_name: "SPF Record"
+    cwe:
+      - cwe_id: "CWE-345"
+        name: "Insufficient Verification of Data Authenticity"
+      - cwe_id: "CWE-290"
+        name: "Authentication Bypass by Spoofing"
+    capec:
+      - capec_id: "CAPEC-199"
+        name: "Phishing Through Email Spoofing"
+      - capec_id: "CAPEC-310"
+        name: "DNS Spoofing"

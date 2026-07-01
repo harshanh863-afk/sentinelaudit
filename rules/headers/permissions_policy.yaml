@@ -1,0 +1,57 @@
+rules:
+  - id: "HTTP-006"
+    name: "Missing Permissions-Policy Header"
+    category: "http_security"
+    severity: "low"
+    cvss_score: 2.6
+    description: >
+      Permissions-Policy header is missing from responses. Without a
+      permissions policy, all browser features (camera, microphone,
+      geolocation, sensors) are potentially accessible to scripts.
+    impact: >
+      Malicious scripts can access sensitive device features without
+      explicit restriction if no Permissions-Policy header is set,
+      increasing the attack surface for script-based attacks.
+    evidence_description: >
+      The Permissions-Policy header was absent from the HTTP response.
+    remediation: >
+      Add a Permissions-Policy header that restricts feature access
+      to the minimum required. For example:
+      'Permissions-Policy: camera=(), microphone=(), geolocation=()'
+    references:
+      - "https://owasp.org/www-project-secure-headers/"
+      - "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy"
+      - "https://www.w3.org/TR/permissions-policy/"
+    compliance:
+      - framework: "owasp"
+        control_id: "A05"
+        control_name: "Security Misconfiguration"
+      - framework: "owasp_asvs"
+        control_id: "V14"
+        control_name: "Configuration Verification"
+      - framework: "nist"
+        control_id: "PR.PS"
+        control_name: "Platform Security"
+      - framework: "nist_80053"
+        control_id: "CM-6"
+        control_name: "Configuration Settings"
+      - framework: "cis"
+        control_id: "4"
+        control_name: "Secure Configuration of Enterprise Assets"
+      - framework: "iso_27001"
+        control_id: "A.8.28"
+        control_name: "Secure Coding"
+      - framework: "gdpr"
+        control_id: "Art.25"
+        control_name: "Data Protection by Design"
+      - framework: "http_sec"
+        control_id: "HDR-6"
+        control_name: "Permissions-Policy"
+    cwe:
+      - cwe_id: "CWE-276"
+        name: "Incorrect Default Permissions"
+      - cwe_id: "CWE-200"
+        name: "Information Exposure"
+    capec:
+      - capec_id: "CAPEC-161"
+        name: "Infrastructure Manipulation"
