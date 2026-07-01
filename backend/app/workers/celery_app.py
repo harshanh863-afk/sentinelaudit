@@ -26,3 +26,12 @@ celery_app.conf.database_table_names = {
     'task': 'celery_taskmeta',
     'group': 'celery_groupmeta',
 }
+
+# Ensure Kombu database transport tables exist prior to polling
+try:
+    with celery_app.broker_connection() as conn:
+        conn.channel().create_tables()
+except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to auto-create Kombu tables: {str(e)}")
