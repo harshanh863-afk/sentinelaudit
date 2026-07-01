@@ -16,19 +16,19 @@ class RiskScore(UUIDMixin, Base):
     cvss_version: Mapped[str] = mapped_column(String(5), default="3.1", nullable=False)
     cvss_score: Mapped[float] = mapped_column(Float, nullable=False)
     attack_vector: Mapped[AttackVector] = mapped_column(
-        Enum(AttackVector, name="attack_vector", create_constraint=True),
+        Enum(AttackVector, name="attack_vector", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
     )
     attack_complexity: Mapped[AttackComplexity] = mapped_column(
-        Enum(AttackComplexity, name="attack_complexity", create_constraint=True),
+        Enum(AttackComplexity, name="attack_complexity", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
     )
     privileges_required: Mapped[PrivilegesRequired] = mapped_column(
-        Enum(PrivilegesRequired, name="privileges_required", create_constraint=True),
+        Enum(PrivilegesRequired, name="privileges_required", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
     )
     user_interaction: Mapped[UserInteraction] = mapped_column(
-        Enum(UserInteraction, name="user_interaction", create_constraint=True),
+        Enum(UserInteraction, name="user_interaction", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
     )
 

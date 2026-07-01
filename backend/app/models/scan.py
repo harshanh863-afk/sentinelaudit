@@ -14,7 +14,7 @@ class Scan(UUIDMixin, TimestampMixin, Base):
         Uuid, ForeignKey("targets.id"), nullable=False, index=True
     )
     status: Mapped[ScanStatus] = mapped_column(
-        Enum(ScanStatus, name="scan_status", create_constraint=True),
+        Enum(ScanStatus, name="scan_status", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         default=ScanStatus.PENDING,
         nullable=False,
         index=True,

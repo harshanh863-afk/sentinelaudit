@@ -13,7 +13,7 @@ class Rule(UUIDMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     severity: Mapped[SeverityLevel] = mapped_column(
-        Enum(SeverityLevel, name="severity_level", create_constraint=True),
+        Enum(SeverityLevel, name="severity_level", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

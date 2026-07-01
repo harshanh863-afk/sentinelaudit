@@ -19,12 +19,12 @@ class Finding(UUIDMixin, Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     finding_type: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     severity: Mapped[SeverityLevel] = mapped_column(
-        Enum(SeverityLevel, name="severity_level", create_constraint=True),
+        Enum(SeverityLevel, name="severity_level", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         nullable=False,
         index=True,
     )
     status: Mapped[FindingStatus] = mapped_column(
-        Enum(FindingStatus, name="finding_status", create_constraint=True),
+        Enum(FindingStatus, name="finding_status", create_constraint=True, values_callable=lambda enum: [item.value for item in enum]),
         default=FindingStatus.NEW,
         nullable=False,
         index=True,
