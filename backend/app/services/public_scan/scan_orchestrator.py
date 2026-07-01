@@ -64,7 +64,7 @@ def create_public_scan(db: Session, target_url: str) -> Scan:
 
     scan = Scan(
         target_id=target.id,
-        status=ScanStatus.QUEUED,
+        status=ScanStatus.PENDING,
     )
     db.add(scan)
     db.commit()

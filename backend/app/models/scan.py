@@ -15,7 +15,7 @@ class Scan(UUIDMixin, TimestampMixin, Base):
     )
     status: Mapped[ScanStatus] = mapped_column(
         Enum(ScanStatus, name="scan_status", create_constraint=True),
-        default=ScanStatus.QUEUED,
+        default=ScanStatus.PENDING,
         nullable=False,
         index=True,
     )

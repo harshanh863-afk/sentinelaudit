@@ -2,7 +2,7 @@ import enum
 
 
 class ScanStatus(str, enum.Enum):
-    QUEUED = "queued"
+    PENDING = "pending"
     RUNNING = "running"
     PROCESSING = "processing"
     COMPLETED = "completed"

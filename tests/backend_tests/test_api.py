@@ -79,7 +79,7 @@ class TestCreateScan:
         resp = client.post("/api/v1/scans", json={"target_id": target_id})
         assert resp.status_code == 201
         data = resp.json()
-        assert data["status"] == "queued"
+        assert data["status"] == "pending"
         assert data["target_id"] == target_id
 
 

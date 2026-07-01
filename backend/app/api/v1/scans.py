@@ -25,7 +25,7 @@ def create_scan(body: ScanCreate, db: Session = Depends(get_db)):
     if not target:
         raise HTTPException(status_code=404, detail="Target not found")
 
-    scan = Scan(target_id=target.id, status=ScanStatus.QUEUED)
+    scan = Scan(target_id=target.id, status=ScanStatus.PENDING)
     db.add(scan)
     db.commit()
     db.refresh(scan)

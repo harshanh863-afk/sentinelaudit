@@ -71,7 +71,7 @@ class TestPipelineDefinition:
 class TestScanModelProgress:
     """New progress fields on the Scan model."""
 
-    def test_scan_defaults_to_queued(self, db_session):
+    def test_scan_defaults_to_pending(self, db_session):
         from app.models import Project, Target, User
         user = User(email="q@example.com", password_hash="pwd", name="Q")
         project = Project(name="P", owner=user)
@@ -79,7 +79,7 @@ class TestScanModelProgress:
         scan = Scan(target=target)
         db_session.add(scan)
         db_session.commit()
-        assert scan.status == ScanStatus.QUEUED
+        assert scan.status == ScanStatus.PENDING
         assert scan.progress is None
         assert scan.progress_stage is None
 
@@ -97,7 +97,7 @@ class TestScanModelProgress:
         assert saved.progress == 50
         assert saved.progress_stage == "Testing"
 
-    def test_scan_transitions_queued_to_running(self, db_session):
+    def test_scan_transitions_pending_to_running(self, db_session):
         from app.models import Project, Target, User
         user = User(email="tr@example.com", password_hash="pwd", name="Tr")
         project = Project(name="P", owner=user)
@@ -105,7 +105,7 @@ class TestScanModelProgress:
         scan = Scan(target=target)
         db_session.add(scan)
         db_session.commit()
-        assert scan.status == ScanStatus.QUEUED
+        assert scan.status == ScanStatus.PENDING
 
         scan.status = ScanStatus.RUNNING
         scan.started_at = datetime.now(timezone.utc)
@@ -126,7 +126,7 @@ class TestScanModelProgress:
 
     def test_scan_all_statuses_valid(self):
         values = {s.value for s in ScanStatus}
-        assert values == {"queued", "running", "processing", "completed", "failed"}
+        assert values == {"pending", "running", "processing", "completed", "failed"}
 
 
 # ===================================================================

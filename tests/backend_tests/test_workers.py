@@ -22,7 +22,7 @@ class TestScanLifecycle:
         scan = Scan(target=target)
         db_session.add(scan)
         db_session.commit()
-        assert scan.status == ScanStatus.QUEUED
+        assert scan.status == ScanStatus.PENDING
         assert scan.started_at is None
         assert scan.completed_at is None
         assert scan.error is None

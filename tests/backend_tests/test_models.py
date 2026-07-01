@@ -90,7 +90,7 @@ class TestScanAndStatusEnum:
         db_session.commit()
 
         saved = db_session.query(Scan).first()
-        assert saved.status == ScanStatus.QUEUED
+        assert saved.status == ScanStatus.PENDING
 
     def test_scan_status_transition(self, db_session):
         user = User(email="t@example.com", password_hash="pwd", name="T")
