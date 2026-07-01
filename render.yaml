@@ -4,7 +4,6 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -19,26 +18,3 @@ services:
       - key: DEBUG
         value: "false"
 
-  - type: worker
-    name: sentinelaudit-worker
-    runtime: docker
-    dockerfilePath: Dockerfile
-    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
-    envVars:
-      - key: DATABASE_URL
-        fromService:
-          type: web
-          name: sentinelaudit-api
-          property: env:DATABASE_URL
-      - key: REDIS_URL
-        fromService:
-          type: web
-          name: sentinelaudit-api
-          property: env:REDIS_URL
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: sentinelaudit-api
-          property: env:SECRET_KEY
-      - key: ENVIRONMENT
-        value: production
