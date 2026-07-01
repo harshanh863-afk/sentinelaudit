@@ -75,6 +75,7 @@ def create_public_scan(db: Session, target_url: str) -> Scan:
 
     from app.workers.scan_tasks import start_scan_task
     try:
+        print(f"=== DISPATCHING TASK WITH NAME: {start_scan_task.name} ===")
         logger.info(f"Dispatching Celery task for scan {scan.id}...")
         result = start_scan_task.delay(str(scan.id))
         logger.info(f"Celery task successfully dispatched with task_id: {result.id}")
