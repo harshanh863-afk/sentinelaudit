@@ -29,9 +29,14 @@ celery_app.conf.database_table_names = {
 
 # Ensure Kombu database transport tables exist prior to polling
 try:
-    with celery_app.broker_connection() as conn:
-        conn.channel().create_tables()
+    from sqlalchemy import create_engine
+    from kombu.transport.sqlalchemy.models import Message as KombuMessage, Queue as KombuQueue
+
+    kombu_engine = create_engine(DATABASE_URL)
+    KombuMessage.__table__.create(kombu_engine, checkfirst=True)
+    KombuQueue.__table__.create(kombu_engine, checkfirst=True)
+    kombu_engine.dispose()
 except Exception as e:
     import logging
     logger = logging.getLogger(__name__)
-    logger.error(f"Failed to auto-create Kombu tables: {str(e)}")
+    logger.error(f"Failed to explicitly declare Kombu SQLAlchemy tables: {str(e)}", exc_info=True)
