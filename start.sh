@@ -1,13 +1,9 @@
 #!/bin/bash
 
-echo "=== Launching Celery Worker Diagnostics ==="
+echo "=== Launching Lightweight Solo Task Execution Context ==="
+PYTHONUNBUFFERED=1 celery -A app.workers.celery_app worker --loglevel=info --pool=solo --concurrency=1 &
 
-(
-    celery -A app.workers.celery_app worker --loglevel=info --concurrency=1 2>&1
-    echo "CRITICAL: Celery worker process exited unexpectedly with exit code $?"
-) &
-
-sleep 3
+sleep 2
 
 echo "Starting FastAPI API Server..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000
