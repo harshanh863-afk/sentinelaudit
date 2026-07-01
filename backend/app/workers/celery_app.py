@@ -1,14 +1,28 @@
 """Celery application configuration for async scan processing."""
 
+import os
+
 from celery import Celery
 
-from app.core.config import settings
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+celery_ssl_config = {}
+if redis_url.startswith("rediss://"):
+    import ssl
+    celery_ssl_config = {
+        "broker_use_ssl": {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+        },
+        "redis_backend_use_ssl": {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+        },
+    }
 
 celery_app = Celery(
     "sentinelaudit",
-    broker=settings.redis_url,
-    backend=settings.redis_url,
-    include=["app.workers.scan_tasks"],
+    broker=redis_url,
+    backend=redis_url,
+    **celery_ssl_config,
 )
 
 celery_app.conf.update(
@@ -20,6 +34,6 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
-    task_soft_time_limit=settings.scanner_timeout * 2,
-    task_time_limit=settings.scanner_timeout * 3,
+    task_soft_time_limit=int(os.getenv("SCANNER_TIMEOUT", "30")) * 2,
+    task_time_limit=int(os.getenv("SCANNER_TIMEOUT", "30")) * 3,
 )
