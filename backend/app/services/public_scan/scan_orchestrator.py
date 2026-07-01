@@ -10,19 +10,39 @@ from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
-from app.models import Project, Scan, Target
+from app.models import Project, Scan, Target, User
 from app.models.enums import ScanStatus
 
 
 PUBLIC_PROJECT_NAME = "Public Scans"
+ANONYMOUS_EMAIL = "anonymous@sentinelaudit.local"
+
+
+def _get_or_create_anonymous_user(db: Session) -> User:
+    user = db.query(User).filter(User.email == ANONYMOUS_EMAIL).first()
+    if not user:
+        user = User(
+            email=ANONYMOUS_EMAIL,
+            password_hash="!disabled",
+            name="Anonymous",
+            is_active=False,
+        )
+        db.add(user)
+        db.flush()
+    return user
 
 
 def _get_or_create_public_project(db: Session) -> Project:
     project = db.query(Project).filter(Project.name == PUBLIC_PROJECT_NAME).first()
     if not project:
-        project = Project(name=PUBLIC_PROJECT_NAME, description="Anonymous public security assessments")
+        anon = _get_or_create_anonymous_user(db)
+        project = Project(
+            name=PUBLIC_PROJECT_NAME,
+            description="Anonymous public security assessments",
+            owner_id=anon.id,
+        )
         db.add(project)
-        db.commit()
+        db.flush()
         db.refresh(project)
     return project
 
