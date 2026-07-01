@@ -10,7 +10,8 @@ if DATABASE_URL.startswith("postgresql+psycopg2://"):
 celery_app = Celery(
     "sentinelaudit",
     broker=f"sqla+{DATABASE_URL}",
-    backend=f"db+{DATABASE_URL}"
+    backend=f"db+{DATABASE_URL}",
+    include=["app.workers.scan_tasks"],
 )
 
 celery_app.conf.update(
