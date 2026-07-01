@@ -4,7 +4,7 @@ echo "=== Launching Lightweight Solo Task Execution Context ==="
 export PYTHONPATH=$PWD
 export PYTHONUNBUFFERED=1
 
-celery -A app.workers.celery_app worker --pool=solo --concurrency=1 --loglevel=info --polling-interval=1.0 &
+celery -A app.workers.celery_app worker --pool=solo --concurrency=1 --loglevel=info --polling-interval=1.0 > /proc/1/fd/1 2>&1 &
 
 sleep 2
 
