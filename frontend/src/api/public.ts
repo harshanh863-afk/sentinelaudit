@@ -5,14 +5,14 @@ import type { PublicScanResponse, PublicScanStatus, ProfessionalReport } from "@
 export function useStartPublicScan() {
   return useMutation({
     mutationFn: (target_url: string) =>
-      api.post<PublicScanResponse>("/v1/public/scan", { target_url }),
+      api.post<PublicScanResponse>("/public/scan", { target_url }),
   });
 }
 
 export function usePublicScanStatus(scanId: string | undefined) {
   return useQuery<PublicScanStatus>({
     queryKey: ["public-scan", scanId],
-    queryFn: () => api.get(`/v1/public/scan/${scanId}`),
+    queryFn: () => api.get(`/public/scan/${scanId}`),
     enabled: !!scanId,
     refetchInterval: (query) => {
       const data = query.state.data;
@@ -26,7 +26,7 @@ export function usePublicScanStatus(scanId: string | undefined) {
 export function usePublicReport(scanId: string | undefined) {
   return useQuery<ProfessionalReport>({
     queryKey: ["public-report", scanId],
-    queryFn: () => api.get(`/v1/public/report/${scanId}`),
+    queryFn: () => api.get(`/public/report/${scanId}`),
     enabled: !!scanId,
   });
 }
