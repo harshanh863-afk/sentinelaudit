@@ -113,10 +113,23 @@ def download_report(
     findings = db.query(Finding).filter(Finding.scan_id == scan_id).all()
     formatted = FindingFormatter.format_many(findings)
 
+    # Compute scan duration from started_at / completed_at
+    scan_duration = 0
+    if scan.started_at and scan.completed_at:
+        scan_duration = int((scan.completed_at - scan.started_at).total_seconds())
+
+    scan_date = ""
+    if scan.started_at:
+        scan_date = scan.started_at.isoformat()
+    elif scan.completed_at:
+        scan_date = scan.completed_at.isoformat()
+    elif scan.created_at:
+        scan_date = scan.created_at.isoformat()
+
     report_data = ReportEngine.build(
         title=f"Security Assessment - {scan.target.url}",
         target_url=scan.target.url,
-        scan_date=scan.created_at.isoformat() if scan.created_at else "",
+        scan_date=scan_date,
         risk_score=scan.risk_score or 0.0,
         findings=formatted,
     )
@@ -135,6 +148,7 @@ def download_report(
             methodology=report_data.methodology,
             executive_summary=report_data.executive_summary,
             remediation_summary=report_data.remediation_summary,
+            scan_duration=scan_duration,
         )
         content = generate_professional_html(professional)
         media_type = "text/html"
@@ -149,6 +163,7 @@ def download_report(
             methodology=report_data.methodology,
             executive_summary=report_data.executive_summary,
             remediation_summary=report_data.remediation_summary,
+            scan_duration=scan_duration,
         )
         content = generate_pdf_html(professional)
         media_type = "text/html"
