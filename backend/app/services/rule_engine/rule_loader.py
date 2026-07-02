@@ -1,11 +1,14 @@
 """Loads and parses YAML security rule definitions from the rules directory."""
 
+import logging
 import os
 from dataclasses import dataclass, field
 
 import yaml
 
 from app.models.enums import SeverityLevel
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -60,15 +63,32 @@ class RuleLoader:
 
     def __init__(self, rules_path: str | None = None):
         self.rules_path = rules_path or self._default_rules_path()
+        resolved = os.path.abspath(self.rules_path)
+        logger.info("RuleLoader initialized: rules_path=%s resolved=%s exists=%s",
+                     self.rules_path, resolved, os.path.isdir(resolved))
 
     @staticmethod
     def _default_rules_path() -> str:
-        return os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "rules")
+        here = os.path.dirname(os.path.abspath(__file__))
+        current = here
+        for _ in range(10):
+            candidate = os.path.join(current, "rules")
+            if os.path.isdir(candidate):
+                return candidate
+            parent = os.path.dirname(current)
+            if parent == current:
+                break
+            current = parent
+        return os.path.join(here, "..", "..", "..", "..", "rules")
 
     def load_all(self) -> list[RuleDefinition]:
         rules: list[RuleDefinition] = []
         rules_dir = os.path.abspath(self.rules_path)
+        logger.info("RuleLoader.load_all: scanning %s (exists=%s)", rules_dir, os.path.isdir(rules_dir))
+
         if not os.path.isdir(rules_dir):
+            logger.warning("RuleLoader.load_all: rules directory NOT FOUND at %s", rules_dir)
+            logger.warning("RuleLoader.load_all: cwd=%s __file__=%s", os.getcwd(), __file__)
             return rules
 
         for root, _dirs, files in os.walk(rules_dir):
@@ -76,8 +96,12 @@ class RuleLoader:
                 if not filename.endswith((".yaml", ".yml")):
                     continue
                 filepath = os.path.join(root, filename)
-                rules.extend(self._load_file(filepath))
+                logger.info("RuleLoader.load_all: loading %s", filepath)
+                loaded = self._load_file(filepath)
+                logger.info("RuleLoader.load_all: %s -> %d rules", filepath, len(loaded))
+                rules.extend(loaded)
 
+        logger.info("RuleLoader.load_all: total %d rules from %s", len(rules), rules_dir)
         return rules
 
     def _load_file(self, filepath: str) -> list[RuleDefinition]:

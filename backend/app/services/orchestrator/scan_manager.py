@@ -12,6 +12,7 @@ Individual scanner failures are captured and do not abort the scan.
 
 import asyncio
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -328,6 +329,15 @@ class ScanManager:
         loader = RuleLoader()
         rules = loader.load_all()
         logger.info("RULE_ENGINE: loaded %d rules from %s", len(rules), loader.rules_path)
+        if not rules:
+            msg = (
+                f"Rule loading failed: no rule definitions were found. "
+                f"Expected directory: {loader.rules_path} "
+                f"(resolved: {os.path.abspath(loader.rules_path)}). "
+                f"cwd={os.getcwd()} __file__={__file__}"
+            )
+            logger.error("RULE_ENGINE: %s", msg)
+            raise RuntimeError(msg)
         matcher = RuleMatcher(rules)
 
         matched_count = 0
