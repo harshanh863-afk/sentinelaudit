@@ -186,7 +186,7 @@ class JavaScriptAnalyzer:
             evidence={"url": url, "asset_type": "javascript"},
             metadata={
                 "check": "js_asset_discovery",
-                "category": "javascript_analysis",
+                "category": "javascript",
                 "description": "JavaScript asset discovered",
                 "detail": f"External JavaScript asset: {url}",
             },
@@ -214,7 +214,7 @@ class JavaScriptAnalyzer:
                 },
                 metadata={
                     "check": "source_map_detection",
-                    "category": "javascript_analysis",
+                    "category": "javascript",
                     "description": "Exposed JavaScript Source Map",
                     "detail": (
                         f"Source map reference found in {source_url}: {map_path}. "
@@ -246,7 +246,7 @@ class JavaScriptAnalyzer:
                     },
                     metadata={
                         "check": "secret_detection",
-                        "category": "javascript_analysis",
+                        "category": "javascript",
                         "description": f"Potential exposed credential: {label}",
                         "detail": (
                             f"A pattern matching '{label}' was detected in {source_url}. "
@@ -305,7 +305,7 @@ class JavaScriptAnalyzer:
                         evidence={"technology": lib_name, "source": "inline JS globals"},
                         metadata={
                             "check": "library_detection",
-                            "category": "javascript_analysis",
+                            "category": "javascript",
                             "description": f"JavaScript library detected: {lib_name}",
                             "detail": f"Detected {lib_name} from inline script patterns",
                         },
@@ -321,7 +321,7 @@ class JavaScriptAnalyzer:
             evidence={"technology": lib_name, "source": source_url},
             metadata={
                 "check": "library_detection",
-                "category": "javascript_analysis",
+                "category": "javascript",
                 "description": f"JavaScript library detected: {lib_name}",
                 "detail": f"Detected {lib_name} from {source_url}",
             },
@@ -353,7 +353,7 @@ class JavaScriptAnalyzer:
                     },
                     metadata={
                         "check": "dangerous_pattern_detection",
-                        "category": "javascript_analysis",
+                        "category": "javascript",
                         "description": f"Dangerous JS pattern: {description}",
                         "detail": f"Found '{pattern.pattern}' in {source_url}",
                     },

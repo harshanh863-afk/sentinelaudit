@@ -21,6 +21,14 @@ class FormattedFinding:
     evidence_hash: str | None = None
     remediation: str | None = None
     compliance: list[dict] = field(default_factory=list)
+    impact: str = ""
+    business_impact: str = ""
+    risk_explanation: str = ""
+    affected_component: str = ""
+    false_positive_notes: str = ""
+    cwe: list[dict] = field(default_factory=list)
+    capec: list[dict] = field(default_factory=list)
+    mitre_attack: list[dict] = field(default_factory=list)
 
 
 class FindingFormatter:

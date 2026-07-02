@@ -163,7 +163,7 @@ class TechFingerprinter:
                 evidence={"technology": tech_name, "source": source},
                 metadata={
                     "check": "technology_fingerprint",
-                    "category": "technology_fingerprint",
+                    "category": "technology",
                     "description": f"Detected technology: {tech_name}",
                     "detail": f"Identified {tech_name} via {source}",
                 },

@@ -75,26 +75,8 @@ def create_public_scan(db: Session, target_url: str) -> Scan:
 
     from app.workers.scan_tasks import start_scan_task
     try:
-        print(f"=== DISPATCHING TASK WITH NAME: {start_scan_task.name} ===")
         logger.info(f"Dispatching Celery task for scan {scan.id}...")
         result = start_scan_task.delay(str(scan.id))
-        # --- TRANSPORT DEBUG LAYER ---
-        try:
-            from sqlalchemy import text
-            from app.db.session import SessionLocal
-
-            with SessionLocal() as db_session:
-                result_set = db_session.execute(text(
-                    "SELECT m.id, q.name AS queue_name, m.payload "
-                    "FROM kombu_message m "
-                    "LEFT JOIN kombu_queue q ON m.queue_id = q.id;"
-                )).all()
-                print(f"=== DB TRANSPORT CHECK: Found {len(result_set)} total pending messages ===")
-                for row in result_set:
-                    print(f"  -> Msg ID: {row.id} | Queue: {row.queue_name} | Payload snippet: {str(row.payload)[:100]}")
-        except Exception as db_err:
-            print(f"=== DB TRANSPORT CHECK FAILED TO EXECUTE: {str(db_err)} ===")
-        # ------------------------------
         logger.info(f"Celery task successfully dispatched with task_id: {result.id}")
     except Exception as celery_err:
         logger.error(f"FATAL: Failed to dispatch Celery task for scan {scan.id}: {str(celery_err)}", exc_info=True)

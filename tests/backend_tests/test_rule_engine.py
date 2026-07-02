@@ -171,37 +171,43 @@ class TestRuleLoader:
 class TestRuleMatcher:
     """Observation-to-rule matching logic."""
 
-    def test_match_by_category_and_prefix(self, sample_rules):
+    def test_match_by_observation_type(self, sample_rules):
         matcher = RuleMatcher(sample_rules)
-        obs = ScannerObservation(check_name="HTTP", category="http_security", passed=False)
+        obs = ScannerObservation(check_name="missing_security_header", category="http_security", passed=False)
         result = matcher.match(obs)
         assert result.matched is True
         assert result.rule is not None
         assert result.rule.rule_id == "HTTP-001"
 
-    def test_no_match_wrong_category(self, sample_rules):
+    def test_no_match_unknown_observation_type(self, sample_rules):
         matcher = RuleMatcher(sample_rules)
-        obs = ScannerObservation(check_name="DNS", category="dns_analysis", passed=True)
+        obs = ScannerObservation(check_name="unknown_type", category="http_security", passed=True)
         result = matcher.match(obs)
         assert result.matched is False
 
-    def test_match_returns_first_rule(self, sample_rules):
+    def test_no_match_wrong_category(self, sample_rules):
         matcher = RuleMatcher(sample_rules)
-        obs = ScannerObservation(check_name="TLS", category="tls_analysis", passed=False)
+        obs = ScannerObservation(check_name="missing_dmarc_record", category="dns_analysis", passed=True)
+        result = matcher.match(obs)
+        assert result.matched is False
+
+    def test_match_tls_observation(self, sample_rules):
+        matcher = RuleMatcher(sample_rules)
+        obs = ScannerObservation(check_name="expired_certificate", category="tls_analysis", passed=False)
         result = matcher.match(obs)
         assert result.matched is True
         assert result.rule.rule_id == "TLS-001"
 
     def test_match_with_passed_observation(self, sample_rules):
         matcher = RuleMatcher(sample_rules)
-        obs = ScannerObservation(check_name="HTTP", category="http_security", passed=True)
+        obs = ScannerObservation(check_name="missing_security_header", category="http_security", passed=True)
         result = matcher.match(obs)
         assert result.matched is True
         assert result.rule.rule_id == "HTTP-001"
 
     def test_empty_rules(self):
         matcher = RuleMatcher([])
-        obs = ScannerObservation(check_name="HTTP", category="http_security", passed=False)
+        obs = ScannerObservation(check_name="missing_security_header", category="http_security", passed=False)
         result = matcher.match(obs)
         assert result.matched is False
 
@@ -298,7 +304,7 @@ class TestRuleEnginePipeline:
         # Match
         matcher = RuleMatcher(rules)
         obs = ScannerObservation(
-            check_name="HTTP", category="http_security",
+            check_name="missing_security_header", category="http_security",
             passed=False, detail="CSP header missing",
         )
         match = matcher.match(obs)
@@ -319,7 +325,7 @@ class TestRuleEnginePipeline:
         scan_id = uuid.uuid4()
         loader = RuleLoader(rules_path=rules_dir)
         matcher = RuleMatcher(loader.load_all())
-        obs = ScannerObservation(check_name="DNS", category="dns_analysis", passed=True)
+        obs = ScannerObservation(check_name="unknown_type", category="dns_analysis", passed=True)
         match = matcher.match(obs)
         finding = FindingBuilder.build(scan_id=scan_id, match=match, observation=obs)
         assert match.matched is False

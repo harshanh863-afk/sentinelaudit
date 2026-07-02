@@ -248,7 +248,7 @@ class ScanManager:
         return [
             {
                 "check_name": r.observation_type,
-                "category": (r.metadata or {}).get("category", "technology_fingerprint"),
+                "category": "technology",
                 "passed": False,
                 "detail": (r.metadata or {}).get("detail", ""),
                 "evidence": r.evidence,
@@ -264,7 +264,7 @@ class ScanManager:
         return [
             {
                 "check_name": r.observation_type,
-                "category": (r.metadata or {}).get("category", "javascript_analysis"),
+                "category": "javascript",
                 "passed": False,
                 "detail": (r.metadata or {}).get("detail", ""),
                 "evidence": r.evidence,
@@ -305,11 +305,23 @@ class ScanManager:
                 findings_data.append({
                     "rule_id": finding.rule_id,
                     "rule_business_id": finding.rule_business_id,
+                    "title": finding.title,
                     "severity": finding.severity,
                     "status": finding.status,
                     "passed": finding.passed,
                     "detail": finding.detail,
                     "finding_type": obs_data.get("check_name", ""),
+                    "cvss_score": finding.cvss_score,
+                    "evidence": finding.evidence,
+                    "impact": finding.impact,
+                    "business_impact": finding.business_impact,
+                    "risk_explanation": finding.risk_explanation,
+                    "affected_component": finding.affected_component,
+                    "false_positive_notes": finding.false_positive_notes,
+                    "compliance_mappings": finding.compliance_mappings,
+                    "cwe": finding.cwe,
+                    "capec": finding.capec,
+                    "mitre_attack": finding.mitre_attack,
                 })
         return findings_data
 
@@ -318,7 +330,7 @@ class ScanManager:
     # ------------------------------------------------------------------
 
     def _persist_findings(self, session, scan_id: uuid.UUID, findings_data: list[dict]) -> list:
-        from app.models import Finding, Rule
+        from app.models import ComplianceMapping, Evidence, Finding, Rule
         from app.models.enums import FindingStatus, SeverityLevel
 
         rule_cache: dict[str, uuid.UUID | None] = {}
@@ -335,13 +347,36 @@ class ScanManager:
             finding = Finding(
                 scan_id=scan_id,
                 rule_id=rule_id,
-                severity=SeverityLevel(fd.get("severity", "info")),
-                status=FindingStatus(fd.get("status", "new")),
+                title=fd.get("title"),
+                severity=SeverityLevel(fd.get("severity") or "info"),
+                status=FindingStatus(fd.get("status") or "new"),
                 passed=fd.get("passed", False),
                 detail=fd.get("detail"),
                 finding_type=fd.get("finding_type", ""),
+                cvss_score=fd.get("cvss_score"),
             )
             session.add(finding)
+            session.flush()
+
+            evidence_raw = fd.get("evidence")
+            if evidence_raw and isinstance(evidence_raw, dict):
+                evidence = Evidence(
+                    scan_id=scan_id,
+                    finding_id=finding.id,
+                    type=fd.get("finding_type", "observation"),
+                    data=evidence_raw,
+                )
+                session.add(evidence)
+
+            for cm in fd.get("compliance_mappings", []):
+                mapping = ComplianceMapping(
+                    finding_id=finding.id,
+                    framework=cm.get("framework", ""),
+                    control_id=cm.get("control_id", ""),
+                    control_name=cm.get("control_name", ""),
+                )
+                session.add(mapping)
+
             objs.append(finding)
         session.flush()
         return objs
@@ -355,13 +390,17 @@ class ScanManager:
         from app.services.risk_engine import RiskCalculator
 
         all_findings = session.query(Finding).filter(Finding.scan_id == scan_id).all()
-        all_findings = list(set(all_findings) | set(finding_objs))
+        seen_ids = {f.id for f in all_findings}
+        for f in finding_objs:
+            if f.id not in seen_ids:
+                all_findings.append(f)
 
         risk_results = [
             RiskCalculator.calculate_finding(
                 severity=f.severity,
                 attack_vector="network",
                 status=f.status,
+                cvss_score=f.cvss_score,
             )
             for f in all_findings
         ]

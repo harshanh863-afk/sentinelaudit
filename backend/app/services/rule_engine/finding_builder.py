@@ -18,9 +18,11 @@ class FindingData:
     passed: bool
     detail: str | None
     rule_business_id: str | None = None
+    title: str = ""
     cvss_score: float | None = None
     impact: str = ""
     evidence_description: str = ""
+    evidence: dict | None = None
     business_impact: str = ""
     risk_explanation: str = ""
     affected_component: str = ""
@@ -76,9 +78,11 @@ class FindingBuilder:
             status=FindingStatus.NEW.value,
             passed=observation.passed,
             detail=observation.detail or rule.description,
+            title=rule.name,
             cvss_score=rule.cvss_score,
             impact=rule.impact,
             evidence_description=rule.evidence_description,
+            evidence=observation.evidence,
             business_impact=rule.business_impact,
             risk_explanation=rule.risk_explanation,
             affected_component=rule.affected_component,

@@ -6,6 +6,41 @@ from app.models.enums import SeverityLevel
 from app.services.rule_engine.rule_loader import RuleDefinition
 
 
+_OBSERVATION_RULE_PREFIX: dict[str, str] = {
+    "missing_security_header": "HTTP",
+    "insecure_cookie": "COOKIE",
+    "server_info_disclosure": "TECH",
+    "tech_info_disclosure": "TECH",
+    "https_unreachable": "HTTP",
+    "http_without_https": "HTTP",
+    "missing_http_to_https_redirect": "HTTP",
+    "expired_certificate": "TLS",
+    "certificate_expiring_soon": "TLS",
+    "certificate_hostname_mismatch": "TLS",
+    "self_signed_certificate": "TLS",
+    "certificate_chain_incomplete": "TLS",
+    "weak_tls_protocol": "TLS",
+    "weak_cipher_suite": "TLS",
+    "tls_connection_failed": "TLS",
+    "spf_allow_all": "DNS",
+    "spf_neutral": "DNS",
+    "spf_excessive_lookups": "DNS",
+    "spf_no_hardfail": "DNS",
+    "missing_spf_record": "DNS",
+    "missing_dmarc_record": "DNS",
+    "weak_dmarc_policy": "DNS",
+    "missing_dkim_record": "DNS",
+    "missing_dnssec": "DNS",
+    "missing_caa_record": "DNS",
+    "technology_detected": "TECH",
+    "javascript_asset_discovered": "JS",
+    "exposed_source_map": "JS",
+    "potential_credential_exposure": "JS",
+    "javascript_library_detected": "JS",
+    "dangerous_javascript_pattern": "JS",
+}
+
+
 @dataclass
 class ScannerObservation:
     """A raw observation emitted by a scanner check module."""
@@ -36,7 +71,10 @@ class RuleMatcher:
 
     def match(self, observation: ScannerObservation) -> MatchResult:
         candidates = self._index.get(observation.category, [])
+        prefix = _OBSERVATION_RULE_PREFIX.get(observation.check_name)
+        if not prefix:
+            return MatchResult(matched=False)
         for rule in candidates:
-            if observation.check_name.startswith(rule.rule_id.split("-")[0]):
+            if rule.rule_id.startswith(prefix):
                 return MatchResult(matched=True, rule=rule)
         return MatchResult(matched=False)
