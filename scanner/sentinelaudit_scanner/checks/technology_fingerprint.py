@@ -1,6 +1,7 @@
 """Technology fingerprinting engine - passive detection from HTTP responses.
 
 Produces ScannerObservation objects only - no database writes, no findings.
+Supports version-aware detection using the version_db fingerprint database.
 """
 
 import re
@@ -8,12 +9,12 @@ import re
 import httpx
 
 from sentinelaudit_scanner.models.observation import ScannerObservation
+from sentinelaudit_scanner.checks.version_db import VERSION_DB, evaluate_version, get_fingerprint
 
 
 class TechFingerprinter:
     """Identifies web technologies via passive HTTP analysis."""
 
-    # Server -> technology mapping
     SERVER_PATTERNS: dict[str, str] = {
         "nginx": "nginx",
         "apache": "Apache",
@@ -29,7 +30,6 @@ class TechFingerprinter:
         "awselb": "AWS ELB",
     }
 
-    # X-Powered-By / header patterns
     TECH_HEADER_PATTERNS: dict[str, str] = {
         "php": "PHP",
         "asp.net": "ASP.NET",
@@ -43,7 +43,6 @@ class TechFingerprinter:
         "jetty": "Jetty",
     }
 
-    # HTML patterns
     HTML_PATTERNS: list[tuple[re.Pattern, str]] = [
         (re.compile(r'wp-content|wp-includes|wordpress', re.I), "WordPress"),
         (re.compile(r'<meta name="generator" content="WordPress', re.I), "WordPress"),
@@ -64,7 +63,6 @@ class TechFingerprinter:
         (re.compile(r'magento|mage\.', re.I), "Magento"),
     ]
 
-    # Cookie patterns
     COOKIE_PATTERNS: list[tuple[str, str]] = [
         ("PHPSESSID", "PHP"),
         ("JSESSIONID", "Java (JSessionID)"),
@@ -77,7 +75,6 @@ class TechFingerprinter:
         ("XSRF-TOKEN", "Laravel / CSRF"),
     ]
 
-    # Infrastructure indicators
     INFRASTRUCTURE_PATTERNS: dict[str, str] = {
         "cloudflare": "Cloudflare",
         "akamai": "Akamai",
@@ -103,73 +100,114 @@ class TechFingerprinter:
         body = resp.text or ""
         cookies = resp.headers.get_list("set-cookie")
 
-        technologies: dict[str, str] = {}  # tech_name -> detection_source
+        tech_data: dict[str, dict] = {}
 
-        # 1. Server header
         server = headers_lower.get("server", "")
         if server:
-            tech = self._match_server(server)
-            if tech:
-                technologies[tech] = f"Server header: {server}"
+            self._detect_from_server(server, tech_data)
 
-        # 2. X-Powered-By
         xpb = headers_lower.get("x-powered-by", "")
         if xpb:
-            tech = self._match_tech_header(xpb)
-            if tech:
-                technologies[tech] = f"X-Powered-By: {xpb}"
+            self._detect_from_tech_header(xpb, tech_data)
 
-        # 3. Other tech headers
         via = headers_lower.get("via", "")
         if via:
             tech = self._match_infrastructure(via)
             if tech:
-                technologies[tech] = f"Via: {via}"
+                self._add_tech(tech_data, tech, f"Via: {via}")
 
         cf_ray = headers_lower.get("cf-ray", "")
         if cf_ray:
-            technologies["Cloudflare"] = "cf-ray header present"
+            self._add_tech(tech_data, "Cloudflare", "cf-ray header present")
 
         x_amz = headers_lower.get("x-amz-cf-id", "")
         if x_amz:
-            technologies["AWS CloudFront"] = "x-amz-cf-id header present"
+            self._add_tech(tech_data, "AWS CloudFront", "x-amz-cf-id header present")
 
-        # 4. HTML patterns
         for pattern, tech_name in self.HTML_PATTERNS:
             if pattern.search(body):
-                if tech_name not in technologies:
-                    technologies[tech_name] = "HTML pattern match"
+                self._add_tech(tech_data, tech_name, "HTML pattern match")
 
-        # 5. Cookie patterns
         for cookie_prefix, tech_name in self.COOKIE_PATTERNS:
             for cookie in cookies:
                 if cookie.startswith(cookie_prefix) or cookie.lower().startswith(cookie_prefix.lower()):
-                    if tech_name not in technologies:
-                        technologies[tech_name] = f"Cookie: {cookie.split('=')[0]}"
+                    self._add_tech(tech_data, tech_name, f"Cookie: {cookie.split('=')[0]}")
 
-        # 6. X-Generator
         generator = headers_lower.get("x-generator", "") or headers_lower.get("generator", "")
         if generator:
             tech = self._match_tech_header(generator)
-            if tech and tech not in technologies:
-                technologies[tech] = f"Generator header: {generator}"
+            if tech:
+                self._add_tech(tech_data, tech, f"Generator header: {generator}")
 
-        # Build observations
-        for tech_name, source in sorted(technologies.items()):
-            observations.append(ScannerObservation(
-                observation_type="technology_detected",
-                target=url,
-                severity_hint="info",
-                evidence={"technology": tech_name, "source": source},
-                metadata={
-                    "check": "technology_fingerprint",
-                    "category": "technology",
-                    "description": f"Detected technology: {tech_name}",
-                    "detail": f"Identified {tech_name} via {source}",
-                },
-            ))
+        for tech_name, info in sorted(tech_data.items()):
+            observations.append(self._build_versioned_observation(url, tech_name, info))
 
         return observations
+
+    def _detect_from_server(self, server: str, tech_data: dict) -> None:
+        server_lower = server.lower()
+        for key, tech_name in self.SERVER_PATTERNS.items():
+            if key in server_lower:
+                version = self._extract_version(tech_name, server)
+                self._add_tech(tech_data, tech_name, f"Server header: {server}", version)
+                return
+        tech_name = server.split("/")[0] if "/" in server else server
+        version = server.split("/")[1] if "/" in server else None
+        self._add_tech(tech_data, tech_name.capitalize(), f"Server header: {server}", version)
+
+    def _detect_from_tech_header(self, value: str, tech_data: dict) -> None:
+        value_lower = value.lower()
+        for key, tech_name in self.TECH_HEADER_PATTERNS.items():
+            if key in value_lower:
+                version = self._extract_version(tech_name, value)
+                self._add_tech(tech_data, tech_name, f"X-Powered-By: {value}", version)
+                return
+        tech_name = value.split("/")[0] if "/" in value else value
+        version = value.split("/")[1] if "/" in value else None
+        self._add_tech(tech_data, tech_name.capitalize(), f"X-Powered-By: {value}", version)
+
+    def _extract_version(self, tech_name: str, raw: str) -> str | None:
+        fp = get_fingerprint(tech_name)
+        if not fp:
+            m = re.search(r"/(\d+\.\d+(?:\.\d+)?)", raw)
+            return m.group(1) if m else None
+        for pattern, _src in fp.version_patterns:
+            m = re.search(pattern, raw)
+            if m:
+                return m.group(1)
+        return None
+
+    def _build_versioned_observation(self, url: str, tech_name: str, info: dict) -> ScannerObservation:
+        version = info.get("version")
+        source = info.get("source", "detected")
+        extra = {"technology": tech_name, "source": source}
+
+        if version:
+            extra["version"] = version
+            eval_result = evaluate_version(tech_name, version)
+            extra["version_status"] = eval_result
+
+        return ScannerObservation(
+            observation_type="technology_detected",
+            target=url,
+            severity_hint="info",
+            evidence=extra,
+            metadata={
+                "check": "technology_fingerprint",
+                "category": "technology_inventory",
+                "description": f"Detected technology: {tech_name}",
+                "detail": f"Identified {tech_name} via {source}" + (f" (version {version})" if version else ""),
+                "version": version,
+                "version_status": eval_result["status"] if version and eval_result else "unknown",
+            },
+        )
+
+    @staticmethod
+    def _add_tech(tech_data: dict, name: str, source: str, version: str | None = None) -> None:
+        if name not in tech_data:
+            tech_data[name] = {"source": source, "version": version}
+        elif version and not tech_data[name].get("version"):
+            tech_data[name]["version"] = version
 
     async def _fetch(self, url: str, follow_redirects: bool = True) -> httpx.Response | None:
         try:

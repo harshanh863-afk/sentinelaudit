@@ -282,7 +282,7 @@ class TestConnectionFailure:
     async def test_connection_failure_produces_critical(self):
         analyzer = _make_analyzer(None)
         obs = await analyzer.analyze("example.com")
-        failed = [o for o in obs if o.observation_type == "tls_connection_failed"]
+        failed = [o for o in obs if o.observation_type == "connection_failed"]
         assert len(failed) == 1
         assert failed[0].severity_hint == "critical"
 
@@ -291,7 +291,7 @@ class TestConnectionFailure:
         analyzer = _make_analyzer(None)
         obs = await analyzer.analyze("example.com")
         assert len(obs) == 1
-        assert obs[0].observation_type == "tls_connection_failed"
+        assert obs[0].observation_type == "connection_failed"
 
 
 # ===================================================================

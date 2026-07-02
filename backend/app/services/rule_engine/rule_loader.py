@@ -37,6 +37,30 @@ class MitreAttackRef:
 
 
 @dataclass
+class ConfidenceModifier:
+    condition: str
+    adjustment: float
+
+
+@dataclass
+class VerificationRequirement:
+    step: str
+    expected: str
+
+
+@dataclass
+class RemediationTemplate:
+    environment: str
+    steps: list[str]
+
+
+@dataclass
+class ExternalDoc:
+    title: str
+    url: str
+
+
+@dataclass
 class RuleDefinition:
     rule_id: str
     name: str
@@ -56,6 +80,15 @@ class RuleDefinition:
     cwe: list[CweRef] = field(default_factory=list)
     capec: list[CapecRef] = field(default_factory=list)
     mitre_attack: list[MitreAttackRef] = field(default_factory=list)
+    # Phase 9 new optional fields
+    confidence_modifiers: list[ConfidenceModifier] = field(default_factory=list)
+    required_evidence_types: list[str] = field(default_factory=list)
+    verification_requirements: list[VerificationRequirement] = field(default_factory=list)
+    attack_references: list[str] = field(default_factory=list)
+    owasp_asvs: list[str] = field(default_factory=list)
+    remediation_templates: list[RemediationTemplate] = field(default_factory=list)
+    cve_references: list[str] = field(default_factory=list)
+    external_documentation: list[ExternalDoc] = field(default_factory=list)
 
 
 class RuleLoader:
@@ -155,6 +188,51 @@ class RuleLoader:
             for c in mitre_attack_raw
         ]
 
+        # Phase 9 optional fields
+        cm_raw = item.get("confidence_modifiers", []) or []
+        confidence_modifiers = [
+            ConfidenceModifier(
+                condition=c.get("condition", ""),
+                adjustment=float(c.get("adjustment", 0)),
+            )
+            for c in cm_raw
+        ]
+
+        required_evidence_types = item.get("required_evidence_types", []) or []
+
+        vreq_raw = item.get("verification_requirements", []) or []
+        verification_requirements = [
+            VerificationRequirement(
+                step=v.get("step", ""),
+                expected=v.get("expected", ""),
+            )
+            for v in vreq_raw
+        ]
+
+        attack_references = item.get("attack_references", []) or []
+
+        owasp_asvs = item.get("owasp_asvs", []) or []
+
+        rt_raw = item.get("remediation_templates", []) or []
+        remediation_templates = [
+            RemediationTemplate(
+                environment=r.get("environment", ""),
+                steps=r.get("steps", []),
+            )
+            for r in rt_raw
+        ]
+
+        cve_references = item.get("cve_references", []) or []
+
+        ed_raw = item.get("external_documentation", []) or []
+        external_documentation = [
+            ExternalDoc(
+                title=e.get("title", ""),
+                url=e.get("url", ""),
+            )
+            for e in ed_raw
+        ]
+
         cvss = item.get("cvss_score")
         cvss_score: float | None = None
         if cvss is not None:
@@ -182,4 +260,12 @@ class RuleLoader:
             cwe=cwe,
             capec=capec,
             mitre_attack=mitre_attack,
+            confidence_modifiers=confidence_modifiers,
+            required_evidence_types=required_evidence_types,
+            verification_requirements=verification_requirements,
+            attack_references=attack_references,
+            owasp_asvs=owasp_asvs,
+            remediation_templates=remediation_templates,
+            cve_references=cve_references,
+            external_documentation=external_documentation,
         )

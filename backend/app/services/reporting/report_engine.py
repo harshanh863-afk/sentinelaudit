@@ -101,6 +101,7 @@ class ReportEngine:
         client_name: str = "",
         privacy_assessment: PrivacyAssessmentReport | None = None,
         scanner_modules: list[str] | None = None,
+        scanner_results: list[dict] | None = None,
         evidence_collected: list[str] | None = None,
     ) -> ProfessionalReport:
         rating = _risk_rating(risk_score)
@@ -123,6 +124,7 @@ class ReportEngine:
                 evidence_summary=getattr(f, "evidence_summary", None),
                 evidence_hash=getattr(f, "evidence_hash", None),
                 remediation=getattr(f, "remediation", None),
+                confidence=getattr(f, "confidence", None),
                 compliance=getattr(f, "compliance", []) or [],
                 impact=getattr(f, "impact", "") or "",
                 business_impact=getattr(f, "business_impact", "") or "",
@@ -183,6 +185,7 @@ class ReportEngine:
             methodology=methodology,
             target_info={"URL": target_url},
             scanner_modules=scanner_modules or [],
+            scanner_results=scanner_results or [],
             evidence_collected=evidence_collected or [],
         )
 

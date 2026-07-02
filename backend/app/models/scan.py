@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -25,6 +25,7 @@ class Scan(UUIDMixin, TimestampMixin, Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     progress: Mapped[int | None] = mapped_column(Integer, nullable=True)
     progress_stage: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    scanner_results: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     target: Mapped["Target"] = relationship("Target", back_populates="scans")
     findings: Mapped[list["Finding"]] = relationship(

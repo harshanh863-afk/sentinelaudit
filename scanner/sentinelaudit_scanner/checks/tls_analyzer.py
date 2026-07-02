@@ -20,7 +20,7 @@ class TLSAnalyzer:
 
         conn = await self._connect(hostname, port)
         if conn is None:
-            observations.append(self._connection_failed(hostname, port))
+            observations.append(await self._connection_failed(hostname, port))
             return observations
 
         cert = conn.get("cert")
@@ -70,6 +70,8 @@ class TLSAnalyzer:
             }
             writer.close()
             return result
+        except ssl.SSLCertVerificationError as e:
+            raise
         except Exception:
             return None
 
@@ -242,10 +244,9 @@ class TLSAnalyzer:
                 )
         return None
 
-    @staticmethod
-    def _connection_failed(hostname: str, port: int) -> ScannerObservation:
+    async def _connection_failed(self, hostname: str, port: int) -> ScannerObservation:
         return ScannerObservation(
-            observation_type="tls_connection_failed",
+            observation_type="connection_failed",
             target=f"{hostname}:{port}",
             severity_hint="critical",
             evidence={"hostname": hostname, "port": port},

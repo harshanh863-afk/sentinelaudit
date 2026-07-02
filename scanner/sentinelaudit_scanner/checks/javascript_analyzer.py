@@ -6,11 +6,12 @@ No exploitation. Intelligence gathering for authorized security assessments.
 
 import hashlib
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
 from sentinelaudit_scanner.models.observation import ScannerObservation
+from sentinelaudit_scanner.checks.version_db import evaluate_version, get_fingerprint
 
 # Regex patterns for potential secrets (passive detection only)
 _SECRET_PATTERNS: list[tuple[re.Pattern, str, str]] = [
@@ -50,6 +51,20 @@ _LIBRARY_SCRIPTS: list[tuple[re.Pattern, str]] = [
     (re.compile(r'd3(\.[a-z]+)?\.js', re.I), "D3.js"),
     (re.compile(r'underscore(\.[a-z]+)?\.js', re.I), "Underscore"),
     (re.compile(r'axios(\.[a-z]+)?\.js', re.I), "Axios"),
+]
+
+# Version extraction patterns for JS libraries (script URL + body patterns)
+_LIBRARY_VERSIONS: list[tuple[re.Pattern, str, str]] = [
+    (re.compile(r'react(?:@|[.-])(\d+\.\d+\.\d+)', re.I), "React", "script_url"),
+    (re.compile(r'angular(?:@|[.-])(\d+\.\d+\.\d+)', re.I), "Angular", "script_url"),
+    (re.compile(r'vue(?:@|[.-])(\d+\.\d+\.\d+)', re.I), "Vue.js", "script_url"),
+    (re.compile(r'jquery[-.](\d+\.\d+\.\d+)', re.I), "jQuery", "script_url"),
+    (re.compile(r'bootstrap[-.](\d+\.\d+\.\d+)', re.I), "Bootstrap", "script_url"),
+    (re.compile(r'moment[-.](\d+\.\d+\.\d+)', re.I), "Moment.js", "script_url"),
+    (re.compile(r'lodash[-.](\d+\.\d+\.\d+)', re.I), "lodash", "script_url"),
+    (re.compile(r'axios(?:@|[.-])(\d+\.\d+\.\d+)', re.I), "Axios", "script_url"),
+    (re.compile(r'version["\']\s*:\s*["\'](\d+\.\d+\.\d+)', re.I), None, "js_body"),
+    (re.compile(r'v(\d+\.\d+\.\d+)\s*["\']', re.I), None, "js_body"),
 ]
 
 # Library detection via inline JS window globals or HTML content
@@ -186,7 +201,7 @@ class JavaScriptAnalyzer:
             evidence={"url": url, "asset_type": "javascript"},
             metadata={
                 "check": "js_asset_discovery",
-                "category": "javascript",
+                "category": "javascript_discovery",
                 "description": "JavaScript asset discovered",
                 "detail": f"External JavaScript asset: {url}",
             },
@@ -207,14 +222,14 @@ class JavaScriptAnalyzer:
             return ScannerObservation(
                 observation_type="exposed_source_map",
                 target=source_url,
-                severity_hint="medium",
+                severity_hint="info",
                 evidence={
                     "source_url": source_url,
                     "source_map_url": map_path,
                 },
                 metadata={
                     "check": "source_map_detection",
-                    "category": "javascript",
+                    "category": "javascript_discovery",
                     "description": "Exposed JavaScript Source Map",
                     "detail": (
                         f"Source map reference found in {source_url}: {map_path}. "
@@ -268,24 +283,34 @@ class JavaScriptAnalyzer:
         obs: list[ScannerObservation] = []
         detected: set[str] = set()
 
+        lib_versions: dict[str, str] = {}
+        for p, lib_name, _src in _LIBRARY_VERSIONS:
+            m = p.search(source_url)
+            if m and lib_name:
+                lib_versions[lib_name] = lib_versions.get(lib_name) or m.group(1)
+            m = p.search(body)
+            if m and lib_name:
+                lib_versions[lib_name] = lib_versions.get(lib_name) or m.group(1)
+
         for p, lib_name in _LIBRARY_SCRIPTS:
             if p.search(source_url):
                 if lib_name not in detected:
                     detected.add(lib_name)
-                    obs.append(cls._library_observation(source_url, lib_name))
+                    obs.append(cls._library_observation(
+                        source_url, lib_name, lib_versions.get(lib_name),
+                    ))
 
         for p, lib_name in _LIBRARY_GLOBALS:
             if p.search(body):
                 if lib_name not in detected:
                     detected.add(lib_name)
-                    obs.append(cls._library_observation(source_url, lib_name))
+                    obs.append(cls._library_observation(
+                        source_url, lib_name, lib_versions.get(lib_name),
+                    ))
 
-        # Compute script hash for evidence
-        if body:
+        if body and obs:
             sha = hashlib.sha256(body.encode()).hexdigest()
-            # Attach hash to first observation if any
-            if obs:
-                obs[0].evidence["sha256"] = sha
+            obs[0].evidence["sha256"] = sha
 
         return obs
 
@@ -294,36 +319,56 @@ class JavaScriptAnalyzer:
         obs: list[ScannerObservation] = []
         detected: set[str] = set()
 
+        lib_versions: dict[str, str] = {}
+        for p, lib_name, _src in _LIBRARY_VERSIONS:
+            m = p.search(body)
+            if m and lib_name:
+                lib_versions[lib_name] = lib_versions.get(lib_name) or m.group(1)
+
         for p, lib_name in _LIBRARY_GLOBALS:
             if p.search(body):
                 if lib_name not in detected:
                     detected.add(lib_name)
+                    version = lib_versions.get(lib_name)
+                    evidence: dict = {"technology": lib_name, "source": "inline JS globals"}
+                    meta_detail = f"Detected {lib_name} from inline script patterns"
+                    if version:
+                        evidence["version"] = version
+                        meta_detail += f" (version {version})"
+                        evidence["version_status"] = evaluate_version(lib_name, version)
                     obs.append(ScannerObservation(
                         observation_type="javascript_library_detected",
                         target="inline_script",
                         severity_hint="info",
-                        evidence={"technology": lib_name, "source": "inline JS globals"},
+                        evidence=evidence,
                         metadata={
                             "check": "library_detection",
                             "category": "javascript",
                             "description": f"JavaScript library detected: {lib_name}",
-                            "detail": f"Detected {lib_name} from inline script patterns",
+                            "detail": meta_detail,
                         },
                     ))
         return obs
 
     @staticmethod
-    def _library_observation(source_url: str, lib_name: str) -> ScannerObservation:
+    def _library_observation(source_url: str, lib_name: str, version: str | None = None) -> ScannerObservation:
+        evidence: dict = {"technology": lib_name, "source": source_url}
+        meta_detail = f"Detected {lib_name} from {source_url}"
+        if version:
+            evidence["version"] = version
+            meta_detail += f" (version {version})"
+            eval_result = evaluate_version(lib_name, version)
+            evidence["version_status"] = eval_result
         return ScannerObservation(
             observation_type="javascript_library_detected",
             target=source_url,
             severity_hint="info",
-            evidence={"technology": lib_name, "source": source_url},
+            evidence=evidence,
             metadata={
                 "check": "library_detection",
                 "category": "javascript",
                 "description": f"JavaScript library detected: {lib_name}",
-                "detail": f"Detected {lib_name} from {source_url}",
+                "detail": meta_detail,
             },
         )
 

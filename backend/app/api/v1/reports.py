@@ -1,8 +1,11 @@
 """Report management API endpoints — generation, download, and status."""
 
 import json
+import logging
 import uuid
 from dataclasses import asdict
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -138,7 +141,32 @@ def download_report(
         content = JSONExporter.export(report_data)
         media_type = "application/json"
         filename = f"report-{scan_id}-{scan.target.host or 'scan'}.json"
-    elif report_format == "html":
+    compliance_scores: list[dict] = []
+    try:
+        from app.services.compliance_engine import assess_findings, build_report
+        assessments = assess_findings(formatted)
+        if assessments:
+            assessment_report = build_report(assessments)
+            compliance_scores = [
+                {
+                    "framework": fa.framework_key,
+                    "score": fa.score,
+                    "status": "compliant" if fa.score >= 80 else "non_compliant" if fa.score < 50 else "partially_compliant",
+                    "passed": fa.passed,
+                    "failed": fa.failed,
+                    "partial": fa.partial,
+                    "not_applicable": fa.not_applicable,
+                    "total": fa.assessed_controls,
+                }
+                for fa in assessment_report.assessments
+            ]
+    except Exception:
+        logger.warning("Compliance assessment skipped for report download", exc_info=True)
+
+    scanner_results = scan.scanner_results or []
+    scanner_modules_list = [sr.get("name", "") for sr in scanner_results] if scanner_results else None
+
+    if report_format == "html":
         professional = ReportEngine.build_professional(
             title=report_data.title,
             target_url=report_data.target_url,
@@ -149,6 +177,9 @@ def download_report(
             executive_summary=report_data.executive_summary,
             remediation_summary=report_data.remediation_summary,
             scan_duration=scan_duration,
+            compliance_scores=compliance_scores,
+            scanner_results=scanner_results,
+            scanner_modules=scanner_modules_list,
         )
         content = generate_professional_html(professional)
         media_type = "text/html"
@@ -164,6 +195,9 @@ def download_report(
             executive_summary=report_data.executive_summary,
             remediation_summary=report_data.remediation_summary,
             scan_duration=scan_duration,
+            compliance_scores=compliance_scores,
+            scanner_results=scanner_results,
+            scanner_modules=scanner_modules_list,
         )
         content = generate_pdf_html(professional)
         media_type = "text/html"

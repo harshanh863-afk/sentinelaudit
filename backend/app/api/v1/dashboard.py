@@ -87,34 +87,38 @@ def get_compliance_overview(db: Session = Depends(get_db)):
 
     frameworks = list_frameworks()
 
-    for fw_key in frameworks:
-        fw_def = get_framework(fw_key)
-        if fw_def:
-            framework_controls[fw_key] = {
-                "name": fw_def.name,
-                "total": len(fw_def.controls),
-                "passed": len(fw_def.controls),
-                "failed": 0,
-                "score": 100.0,
-            }
+    assessed_controls: dict[str, set[str]] = {}
 
     for fw, ctrl_id, status in findings_with_mappings:
-        if fw in framework_controls:
-            framework_controls[fw]["failed"] += 1
-            framework_controls[fw]["passed"] = max(
-                0, framework_controls[fw]["total"] - framework_controls[fw]["failed"]
-            )
+        if fw in frameworks:
+            assessed_controls.setdefault(fw, set()).add(ctrl_id)
 
-    results = []
-    for fw_key, data in framework_controls.items():
-        total = data["total"]
-        score = round((data["passed"] / total * 100), 1) if total > 0 else 0.0
+    for fw_key in frameworks:
+        fw_def = get_framework(fw_key)
+        if not fw_def:
+            continue
+
+        assessed = assessed_controls.get(fw_key, set())
+        failed_count = 0
+        for fw, ctrl_id, status in findings_with_mappings:
+            if fw == fw_key and ctrl_id in assessed:
+                failed_count += 1
+
+        total_assessed = len(assessed)
+        passed_count = total_assessed - failed_count
+
+        if total_assessed > 0:
+            score = round((passed_count / total_assessed * 100), 1)
+        else:
+            score = 100.0
+
         results.append({
             "framework_key": fw_key,
-            "name": data["name"],
-            "total_controls": total,
-            "passed": data["passed"],
-            "failed": data["failed"],
+            "name": fw_def.name,
+            "total_controls": len(fw_def.controls),
+            "assessed_controls": total_assessed,
+            "passed": passed_count,
+            "failed": failed_count,
             "score": score,
         })
 

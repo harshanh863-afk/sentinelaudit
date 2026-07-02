@@ -5,7 +5,13 @@ from app.services.risk_engine.models import (
     RiskExplanation,
     SecurityGrade,
 )
-from app.services.risk_engine.risk_calculator import RiskCalculator, RiskLevel, RiskScoreResult
+from app.services.risk_engine.risk_calculator import (
+    RiskCalculator,
+    RiskLevel,
+    RiskScoreResult,
+    EnterpriseRiskReport,
+    ScoreBreakdown,
+)
 from app.services.risk_engine.grade_calculator import calculate_grade, grade_description
 from app.services.risk_engine.compliance_scorer import (
     calculate_compliance_posture,
@@ -14,12 +20,17 @@ from app.services.risk_engine.compliance_scorer import (
 )
 from app.services.risk_engine.explanation_engine import generate_explanation
 from app.services.risk_engine.intelligence_engine import IntelligenceEngine
+from app.services.risk_engine.confidence_engine import ConfidenceEngine, Confidence
 
 __all__ = [
     "RiskCalculator",
     "RiskLevel",
     "RiskScoreResult",
+    "EnterpriseRiskReport",
+    "ScoreBreakdown",
     "ConfidenceLevel",
+    "ConfidenceEngine",
+    "Confidence",
     "SecurityGrade",
     "CompliancePosture",
     "RiskExplanation",

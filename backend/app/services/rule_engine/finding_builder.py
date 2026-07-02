@@ -20,6 +20,7 @@ class FindingData:
     rule_business_id: str | None = None
     title: str = ""
     cvss_score: float | None = None
+    confidence: float | None = None
     impact: str = ""
     evidence_description: str = ""
     evidence: dict | None = None
@@ -80,6 +81,7 @@ class FindingBuilder:
             detail=observation.detail or rule.description,
             title=rule.name,
             cvss_score=rule.cvss_score,
+            confidence=match.confidence,
             impact=rule.impact,
             evidence_description=rule.evidence_description,
             evidence=observation.evidence,

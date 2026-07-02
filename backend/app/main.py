@@ -1,6 +1,11 @@
 """SentinelAudit API — Production entry point."""
 
+import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,13 +22,40 @@ from app.core.config import settings
 from app.core.environment import env_config
 from app.core.logging import setup_logging
 from app.middleware.security_headers import SecurityHeadersMiddleware
-from app.db.session import engine
+from app.db.session import SessionLocal, engine
 
 setup_logging("DEBUG" if settings.debug else "INFO")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    from app.services.rule_engine.rule_seeder import seed_rules
+    from app.services.rule_engine.rule_validator import RuleValidator
+
+    # Validate rules during startup
+    try:
+        validator = RuleValidator()
+        validator.validate_all()
+        logger.info("LIFESPAN: all rules validated successfully")
+    except Exception as exc:
+        logger.warning("LIFESPAN: rule validation warning: %s", exc)
+
+    db = SessionLocal()
+    try:
+        seeded = seed_rules(db)
+        if seeded:
+            logger.info("LIFESPAN: seeded %d rules on startup", seeded)
+    except Exception as exc:
+        logger.warning("LIFESPAN: rule seeding skipped: %s", exc)
+    finally:
+        db.close()
+    yield
+
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
+    lifespan=lifespan,
 )
 
 # ── Security Headers ──────────────────────────────────────────────
@@ -67,6 +99,14 @@ app.include_router(public_router, prefix="/api")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(scans_router, prefix="/api/v1")
 app.include_router(targets_router, prefix="/api/v1")
+
+# Enterprise routers (lazy-loaded)
+try:
+    from app.api.v1.exports import router as exports_router
+    app.include_router(exports_router, prefix="/api/v1")
+    logger.info("MAIN: export endpoints registered")
+except Exception as exc:
+    logger.warning("MAIN: export endpoints skipped: %s", exc)
 
 
 # ── Health endpoints ──────────────────────────────────────────────

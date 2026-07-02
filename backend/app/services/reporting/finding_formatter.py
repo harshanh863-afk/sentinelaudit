@@ -20,6 +20,7 @@ class FormattedFinding:
     evidence_summary: str | None
     evidence_hash: str | None = None
     remediation: str | None = None
+    confidence: float | None = None
     compliance: list[dict] = field(default_factory=list)
     impact: str = ""
     business_impact: str = ""
@@ -54,6 +55,7 @@ class FindingFormatter:
             evidence_summary=evidence or None,
             evidence_hash=evidence_hash,
             remediation=finding.rule.remediation if finding.rule and hasattr(finding.rule, 'remediation') else finding.detail,
+            confidence=finding.confidence,
             compliance=[
                 {"framework": m.framework, "control_id": m.control_id, "control_name": m.control_name}
                 for m in finding.compliance_mappings

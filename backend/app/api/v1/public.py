@@ -4,8 +4,11 @@ No authentication required.
 """
 
 import json
+import logging
 import uuid
 from dataclasses import asdict
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
@@ -23,6 +26,30 @@ from app.services.reporting.pdf_generator import PDFExporter as ProfessionalPDFE
 from app.core.config import settings
 
 router = APIRouter(prefix="/v1/public", tags=["public"])
+
+def _compute_compliance_scores(formatted_findings: list) -> list[dict]:
+    try:
+        from app.services.compliance_engine import assess_findings, build_report
+        assessments = assess_findings(formatted_findings)
+        if assessments:
+            assessment_report = build_report(assessments)
+            return [
+                {
+                    "framework": fa.framework_key,
+                    "score": fa.score,
+                    "status": "compliant" if fa.score >= 80 else "non_compliant" if fa.score < 50 else "partially_compliant",
+                    "passed": fa.passed,
+                    "failed": fa.failed,
+                    "partial": fa.partial,
+                    "not_applicable": fa.not_applicable,
+                    "total": fa.assessed_controls,
+                }
+                for fa in assessment_report.assessments
+            ]
+    except Exception:
+        logger.warning("Compliance assessment skipped", exc_info=True)
+    return []
+
 
 rate_limiter = InMemoryRateLimiter(
     max_requests=settings.public_scan_max_per_hour,
@@ -101,6 +128,10 @@ def get_public_report(scan_id: uuid.UUID, db: Session = Depends(get_db)):
     findings = db.query(Finding).filter(Finding.scan_id == scan_id).all()
     formatted = FindingFormatter.format_many(findings)
 
+    compliance_scores = _compute_compliance_scores(formatted)
+    scanner_results = scan.scanner_results or []
+    scanner_modules_list = [sr.get("name", "") for sr in scanner_results] if scanner_results else None
+
     professional = ReportEngine.build_professional(
         title=f"Security Assessment - {scan.target.url}",
         target_url=scan.target.url,
@@ -109,6 +140,9 @@ def get_public_report(scan_id: uuid.UUID, db: Session = Depends(get_db)):
         findings=formatted,
         scanner_version="1.0.0",
         scan_duration=0,
+        compliance_scores=compliance_scores,
+        scanner_results=scanner_results,
+        scanner_modules=scanner_modules_list,
     )
 
     return Response(
@@ -135,6 +169,10 @@ def download_public_report(
     findings = db.query(Finding).filter(Finding.scan_id == scan_id).all()
     formatted = FindingFormatter.format_many(findings)
 
+    compliance_scores = _compute_compliance_scores(formatted)
+    scanner_results = scan.scanner_results or []
+    scanner_modules_list = [sr.get("name", "") for sr in scanner_results] if scanner_results else None
+
     professional = ReportEngine.build_professional(
         title=f"Security Assessment - {scan.target.url}",
         target_url=scan.target.url,
@@ -143,6 +181,9 @@ def download_public_report(
         findings=formatted,
         scanner_version="1.0.0",
         scan_duration=0,
+        compliance_scores=compliance_scores,
+        scanner_results=scanner_results,
+        scanner_modules=scanner_modules_list,
     )
 
     scan_id_str = str(scan_id)

@@ -22,6 +22,7 @@ _OBSERVATION_RULE_PREFIX: dict[str, str] = {
     "weak_tls_protocol": "TLS",
     "weak_cipher_suite": "TLS",
     "tls_connection_failed": "TLS",
+    "connection_failed": "TLS",
     "spf_allow_all": "DNS",
     "spf_neutral": "DNS",
     "spf_excessive_lookups": "DNS",
@@ -38,6 +39,16 @@ _OBSERVATION_RULE_PREFIX: dict[str, str] = {
     "potential_credential_exposure": "JS",
     "javascript_library_detected": "JS",
     "dangerous_javascript_pattern": "JS",
+}
+
+# Confidence level mapping by observation category prefix for scoring
+_CONFIDENCE_BY_PREFIX: dict[str, float] = {
+    "HTTP": 0.95,
+    "COOKIE": 0.95,
+    "TLS": 0.90,
+    "DNS": 0.80,
+    "TECH": 0.70,
+    "JS": 0.65,
 }
 
 
@@ -69,6 +80,10 @@ class RuleMatcher:
         for rule in rules:
             self._index.setdefault(rule.category, []).append(rule)
 
+    @staticmethod
+    def _confidence_for(prefix: str) -> float:
+        return _CONFIDENCE_BY_PREFIX.get(prefix, 0.5)
+
     def match(self, observation: ScannerObservation) -> MatchResult:
         candidates = self._index.get(observation.category, [])
         prefix = _OBSERVATION_RULE_PREFIX.get(observation.check_name)
@@ -76,5 +91,6 @@ class RuleMatcher:
             return MatchResult(matched=False)
         for rule in candidates:
             if rule.rule_id.startswith(prefix):
-                return MatchResult(matched=True, rule=rule)
+                confidence = self._confidence_for(prefix)
+                return MatchResult(matched=True, rule=rule, confidence=confidence)
         return MatchResult(matched=False)

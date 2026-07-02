@@ -32,6 +32,7 @@ class Finding(UUIDMixin, Base):
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     cvss_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     scan: Mapped["Scan"] = relationship("Scan", back_populates="findings")
     rule: Mapped["Rule | None"] = relationship("Rule", back_populates="findings")

@@ -3,16 +3,19 @@
 Coordinates:
     1. Scanner execution (HTTP → TLS → DNS → Tech → JS)
     2. Rule engine — observations to findings
-    3. Risk engine — findings to risk scores
-    4. Compliance engine — findings to compliance posture
-    5. Report generation
+    3. CVE enrichment — attach CVE intelligence to versioned findings
+    4. Risk engine — findings to risk scores
+    5. Compliance engine — findings to compliance posture
+    6. Report generation
 
 Individual scanner failures are captured and do not abort the scan.
+Tracks per-scanner reliability: execution time, retries, timeouts, failures.
 """
 
 import asyncio
 import logging
 import os
+import time as time_module
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -20,14 +23,48 @@ from typing import Any
 from app.models.enums import FindingStatus, ScanStatus, SeverityLevel
 from app.models.scan import Scan
 from app.services.orchestrator.pipeline import (
-    PIPELINE,
     PipelineStage,
-    StageDefinition,
     get_stage,
 )
 from app.services.orchestrator.models import ScannerError
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 2
+
+
+class ScannerRunStats:
+    """Tracks per-scanner execution statistics for reliability reporting."""
+
+    def __init__(self, name: str):
+        self.name = name
+        self.execution_time_ms: int = 0
+        self.retry_count: int = 0
+        self.timeout_reason: str | None = None
+        self.network_failures: int = 0
+        self.partial_failures: int = 0
+        self.skipped_checks: int = 0
+        self.unsupported_targets: list[str] = []
+        self.recovery_attempts: int = 0
+        self.status: str = "pending"
+        self.observations: int = 0
+        self.error: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "status": self.status,
+            "execution_time_ms": self.execution_time_ms,
+            "retry_count": self.retry_count,
+            "timeout_reason": self.timeout_reason,
+            "network_failures": self.network_failures,
+            "partial_failures": self.partial_failures,
+            "skipped_checks": self.skipped_checks,
+            "unsupported_targets": self.unsupported_targets,
+            "recovery_attempts": self.recovery_attempts,
+            "observations": self.observations,
+            "error": self.error,
+        }
 
 
 class ScanManager:
@@ -36,6 +73,8 @@ class ScanManager:
     def __init__(self, db_session_factory: Any):
         self._session_factory = db_session_factory
         self._errors: list[ScannerError] = []
+        self._scanner_results: list[dict] = []
+        self._scanner_stats: dict[str, ScannerRunStats] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -59,29 +98,61 @@ class ScanManager:
                                   "Starting assessment")
             all_observations: list[dict] = []
 
-            # ---- Scanner Pipeline ----
-            all_observations.extend(self._run_scanner_stage(
-                session, scan, PipelineStage.HTTP_ANALYSIS, "HTTP Analyzer",
-                self._run_http_analyzer, scan.target.url,
-            ))
-            all_observations.extend(self._run_scanner_stage(
-                session, scan, PipelineStage.TLS_ANALYSIS, "TLS Analyzer",
-                self._run_tls_analyzer, scan.target.url,
-            ))
-            all_observations.extend(self._run_scanner_stage(
-                session, scan, PipelineStage.DNS_ANALYSIS, "DNS Analyzer",
-                self._run_dns_analyzer, scan.target.url,
-            ))
-            all_observations.extend(self._run_scanner_stage(
-                session, scan, PipelineStage.TECHNOLOGY_FINGERPRINT,
-                "Technology Fingerprinter",
-                self._run_tech_fingerprinter, scan.target.url,
-            ))
-            all_observations.extend(self._run_scanner_stage(
-                session, scan, PipelineStage.JAVASCRIPT_ANALYSIS,
-                "JavaScript Analyzer",
-                self._run_js_analyzer, scan.target.url,
-            ))
+            # ---- Scanner Pipeline (parallel execution) ----
+            scanner_tasks = [
+                (PipelineStage.HTTP_ANALYSIS, "HTTP Analyzer", self._run_http_analyzer),
+                (PipelineStage.TLS_ANALYSIS, "TLS Analyzer", self._run_tls_analyzer),
+                (PipelineStage.DNS_ANALYSIS, "DNS Analyzer", self._run_dns_analyzer),
+                (PipelineStage.TECHNOLOGY_FINGERPRINT, "Technology Fingerprinter", self._run_tech_fingerprinter),
+                (PipelineStage.JAVASCRIPT_ANALYSIS, "JavaScript Analyzer", self._run_js_analyzer),
+            ]
+
+            url = scan.target.url
+            parallel_results: list[tuple[str, list[dict]]] = []
+            parallel_failed = False
+
+            try:
+                import asyncio as _asyncio
+                loop = _asyncio.new_event_loop()
+                _asyncio.set_event_loop(loop)
+                try:
+                    coros = [
+                        self._run_scanner_stage_async(session, scan, stage, label, fn, url)
+                        for stage, label, fn in scanner_tasks
+                    ]
+                    results = loop.run_until_complete(
+                        _asyncio.gather(*coros, return_exceptions=True)
+                    )
+                    for r in results:
+                        if isinstance(r, Exception):
+                            logger.warning("PIPELINE: parallel scanner task failed: %s", r)
+                            parallel_failed = True
+                        elif isinstance(r, tuple):
+                            parallel_results.append(r)
+                finally:
+                    loop.close()
+            except Exception as exc:
+                logger.warning("PIPELINE: parallel execution error: %s", exc)
+                parallel_failed = True
+
+            if parallel_failed or not parallel_results:
+                # Collect results from parallel execution that did succeed
+                collected = set()
+                for label, obs in parallel_results:
+                    for o in obs:
+                        all_observations.append(o)
+                    collected.add(label)
+                # Run failed/missing scanners sequentially
+                for stage, label, fn in scanner_tasks:
+                    if label not in collected:
+                        logger.info("PIPELINE: running %s sequentially (parallel failed)", label)
+                        obs = self._run_scanner_stage(session, scan, stage, label, fn, url)
+                        for o in obs:
+                            all_observations.append(o)
+            else:
+                for label, obs in parallel_results:
+                    for o in obs:
+                        all_observations.append(o)
 
             logger.info("PIPELINE: total observations collected = %d", len(all_observations))
             if all_observations:
@@ -97,6 +168,12 @@ class ScanManager:
             findings_data = self._apply_rule_engine(scan_id, all_observations)
 
             logger.info("PIPELINE: findings_data from rule engine = %d", len(findings_data))
+
+            # ---- Recalculate Confidence ----
+            findings_data = self._recalculate_confidence(findings_data)
+
+            # ---- CVE Enrichment (before persistence) ----
+            findings_data = self._enrich_with_cve(findings_data)
 
             # ---- Persist Findings ----
             finding_objs = self._persist_findings(session, scan_id, findings_data)
@@ -116,13 +193,14 @@ class ScanManager:
 
             # ---- Report Generation ----
             self._update_progress(session, scan, PipelineStage.REPORT_GENERATION,
-                                  97, "Generating report")
+                                   97, "Generating report")
 
             # ---- Complete ----
             scan.status = ScanStatus.COMPLETED
             scan.completed_at = datetime.now(timezone.utc)
             scan.progress = 100
             scan.progress_stage = "complete"
+            scan.scanner_results = self._scanner_results
             if self._errors:
                 existing = scan.error or ""
                 err_summary = "; ".join(f"{e.scanner_name}: {e.error}" for e in self._errors)
@@ -193,6 +271,57 @@ class ScanManager:
     # Scanner stages
     # ------------------------------------------------------------------
 
+    async def _run_scanner_stage_async(
+        self, session, scan: Scan, stage: PipelineStage,
+        label: str, scanner_fn, *args,
+    ) -> tuple[str, list[dict]]:
+        """Async version of _run_scanner_stage for parallel execution."""
+        stage_def = get_stage(stage)
+        if not stage_def:
+            return label, []
+
+        self._update_progress(session, scan, stage, stage_def.start_progress, label)
+        stats = ScannerRunStats(label)
+        self._scanner_stats[label] = stats
+
+        for attempt in range(1 + MAX_RETRIES):
+            try:
+                import time as _tm
+                start_ms = int(_tm.time() * 1000)
+                result = await scanner_fn(*args)
+                elapsed = int(_tm.time() * 1000) - start_ms
+                stats.execution_time_ms = elapsed
+                stats.observations = len(result)
+                stats.retry_count = attempt
+                stats.status = "success"
+                self._scanner_results.append(stats.to_dict())
+                return label, result
+            except asyncio.TimeoutError:
+                stats.timeout_reason = f"Exceeded timeout on attempt {attempt + 1}"
+                stats.network_failures += 1
+                if attempt < MAX_RETRIES:
+                    stats.recovery_attempts += 1
+                    continue
+                stats.status = "timeout"
+                self._errors.append(ScannerError(scanner_name=label, error=stats.timeout_reason))
+                self._scanner_results.append(stats.to_dict())
+                return label, []
+            except Exception as exc:
+                err_str = str(exc)
+                if "connect" in err_str.lower() or "resolve" in err_str.lower():
+                    stats.network_failures += 1
+                else:
+                    stats.partial_failures += 1
+                if attempt < MAX_RETRIES:
+                    stats.recovery_attempts += 1
+                    continue
+                stats.status = "failed"
+                stats.error = err_str
+                self._errors.append(ScannerError(scanner_name=label, error=err_str))
+                self._scanner_results.append(stats.to_dict())
+                return label, []
+        return label, []
+
     def _run_scanner_stage(
         self, session, scan: Scan, stage: PipelineStage,
         label: str, scanner_fn, *args,
@@ -202,18 +331,61 @@ class ScanManager:
             logger.info("SCANNER_STAGE [%s]: no stage definition, returning []", label)
             return []
         self._update_progress(session, scan, stage, stage_def.start_progress, label)
-        try:
-            result = asyncio.run(scanner_fn(*args))
-            logger.info("SCANNER_STAGE [%s]: returned %d observations", label, len(result))
-            for i, obs in enumerate(result):
-                logger.info("SCANNER_STAGE [%s] obs[%d]: check_name=%s category=%s severity=%s has_evidence=%s",
-                            label, i, obs.get("check_name"), obs.get("category"),
-                            obs.get("severity"), "yes" if obs.get("evidence") else "no")
-            return result
-        except Exception as exc:
-            logger.error("SCANNER_STAGE [%s] ERROR: %s", label, str(exc), exc_info=True)
-            self._errors.append(ScannerError(scanner_name=label, error=str(exc)))
-            return []
+
+        stats = ScannerRunStats(label)
+        self._scanner_stats[label] = stats
+        start_ms = int(time_module.time() * 1000)
+
+        for attempt in range(1 + MAX_RETRIES):
+            try:
+                result = asyncio.run(scanner_fn(*args))
+                elapsed = int(time_module.time() * 1000) - start_ms
+                stats.execution_time_ms = elapsed
+                stats.observations = len(result)
+                stats.retry_count = attempt
+                stats.status = "success"
+                logger.info(
+                    "SCANNER_STAGE [%s]: returned %d observations in %dms (attempt %d/%d)",
+                    label, len(result), elapsed, attempt + 1, 1 + MAX_RETRIES,
+                )
+                self._scanner_results.append(stats.to_dict())
+                return result
+            except asyncio.TimeoutError:
+                elapsed = int(time_module.time() * 1000) - start_ms
+                stats.timeout_reason = f"Exceeded timeout on attempt {attempt + 1}"
+                stats.network_failures += 1
+                logger.warning(
+                    "SCANNER_STAGE [%s]: timeout on attempt %d/%d (%dms)",
+                    label, attempt + 1, 1 + MAX_RETRIES, elapsed,
+                )
+                if attempt < MAX_RETRIES:
+                    stats.recovery_attempts += 1
+                    continue
+                stats.execution_time_ms = elapsed
+                stats.status = "timeout"
+                self._errors.append(ScannerError(scanner_name=label, error=stats.timeout_reason))
+                self._scanner_results.append(stats.to_dict())
+                return []
+            except Exception as exc:
+                elapsed = int(time_module.time() * 1000) - start_ms
+                err_str = str(exc)
+                logger.error(
+                    "SCANNER_STAGE [%s] ERROR (attempt %d/%d): %s",
+                    label, attempt + 1, 1 + MAX_RETRIES, err_str, exc_info=True,
+                )
+                if "connect" in err_str.lower() or "resolve" in err_str.lower():
+                    stats.network_failures += 1
+                else:
+                    stats.partial_failures += 1
+                if attempt < MAX_RETRIES:
+                    stats.recovery_attempts += 1
+                    continue
+                stats.execution_time_ms = elapsed
+                stats.status = "failed"
+                stats.error = err_str
+                self._errors.append(ScannerError(scanner_name=label, error=err_str))
+                self._scanner_results.append(stats.to_dict())
+                return []
 
     async def _run_http_analyzer(self, url: str) -> list[dict]:
         from sentinelaudit_scanner.checks.http_analyzer import HTTPAnalyzer
@@ -340,8 +512,12 @@ class ScanManager:
             raise RuntimeError(msg)
         matcher = RuleMatcher(rules)
 
+        MIN_CONFIDENCE_THRESHOLD = 0.5
+
         matched_count = 0
         no_match_count = 0
+        low_confidence_skipped = 0
+        dedup_seen: set[tuple[str, str]] = set()
         findings_data: list[dict] = []
         for idx, obs_data in enumerate(observations):
             obs = ScannerObservation(
@@ -355,12 +531,24 @@ class ScanManager:
             logger.info("RULE_ENGINE: obs[%d] check_name=%s category=%s matched=%s rule=%s",
                         idx, obs.check_name, obs.category,
                         match.matched, match.rule.rule_id if match.matched else "N/A")
+            if match.matched and match.rule:
+                dedup_key = (obs.check_name, match.rule.rule_id)
+                if dedup_key in dedup_seen:
+                    logger.info("RULE_ENGINE: dedup skip obs[%d] key=%s", idx, dedup_key)
+                    no_match_count += 1
+                    continue
+                dedup_seen.add(dedup_key)
+
             finding = FindingBuilder.build(
                 scan_id=scan_id,
                 match=match,
                 observation=obs,
             )
             if finding:
+                if finding.confidence is not None and finding.confidence < MIN_CONFIDENCE_THRESHOLD:
+                    logger.info("RULE_ENGINE: obs[%d] confidence=%.2f below threshold, skipping", idx, finding.confidence)
+                    low_confidence_skipped += 1
+                    continue
                 matched_count += 1
                 findings_data.append({
                     "rule_id": finding.rule_id,
@@ -372,6 +560,7 @@ class ScanManager:
                     "detail": finding.detail,
                     "finding_type": obs_data.get("check_name", ""),
                     "cvss_score": finding.cvss_score,
+                    "confidence": finding.confidence,
                     "evidence": finding.evidence,
                     "impact": finding.impact,
                     "business_impact": finding.business_impact,
@@ -385,8 +574,8 @@ class ScanManager:
                 })
             else:
                 no_match_count += 1
-        logger.info("RULE_ENGINE: %d observations -> %d matched -> %d findings_data, %d no_match",
-                    len(observations), matched_count, len(findings_data), no_match_count)
+        logger.info("RULE_ENGINE: %d observations -> %d matched -> %d findings_data, %d no_match, %d low_confidence_skipped",
+                    len(observations), matched_count, len(findings_data), no_match_count, low_confidence_skipped)
         return findings_data
 
     # ------------------------------------------------------------------
@@ -435,6 +624,7 @@ class ScanManager:
                 detail=fd.get("detail"),
                 finding_type=fd.get("finding_type", ""),
                 cvss_score=fd.get("cvss_score"),
+                confidence=fd.get("confidence"),
             )
             session.add(finding)
             session.flush()
@@ -471,12 +661,57 @@ class ScanManager:
         return objs
 
     # ------------------------------------------------------------------
+    # CVE Enrichment
+    # ------------------------------------------------------------------
+
+    def _enrich_with_cve(self, findings_data: list[dict]) -> list[dict]:
+        """Enrich findings with CVE intelligence asynchronously."""
+        try:
+            import asyncio
+            from app.services.cve.enrichment import CveEnrichmentService
+            service = CveEnrichmentService()
+            enriched = asyncio.run(service.enrich(findings_data))
+            cve_count = sum(1 for f in enriched if f.get("cves"))
+            logger.info("CVE_ENRICHMENT: %d findings enriched with CVE data", cve_count)
+            return enriched
+        except Exception as exc:
+            logger.warning("CVE_ENRICHMENT: failed, continuing without enrichment: %s", exc)
+            return findings_data
+
+    # ------------------------------------------------------------------
+    # Confidence recalculation
+    # ------------------------------------------------------------------
+
+    def _recalculate_confidence(self, findings_data: list[dict]) -> list[dict]:
+        """Apply evidence-based confidence scoring to all findings."""
+        try:
+            from app.services.risk_engine.confidence_engine import ConfidenceEngine
+            for finding in findings_data:
+                score, label = ConfidenceEngine.calculate_from_finding_data(finding)
+                finding["confidence"] = score
+                finding["confidence_label"] = label.value
+            logger.info("CONFIDENCE: recalculated for %d findings", len(findings_data))
+        except Exception as exc:
+            logger.warning("CONFIDENCE: recalculation failed, using existing: %s", exc)
+        return findings_data
+
+    # ------------------------------------------------------------------
     # Risk scoring
     # ------------------------------------------------------------------
 
     def _calculate_risk(self, session, scan_id: uuid.UUID, finding_objs: list) -> dict:
         from app.models import Finding
         from app.services.risk_engine import RiskCalculator
+        from app.services.risk_engine.models import ConfidenceLevel
+
+        def _confidence_level(value: float) -> ConfidenceLevel:
+            if value >= 0.90:
+                return ConfidenceLevel.CONFIRMED
+            if value >= 0.75:
+                return ConfidenceLevel.HIGH
+            if value >= 0.60:
+                return ConfidenceLevel.MEDIUM
+            return ConfidenceLevel.LOW
 
         all_findings = session.query(Finding).filter(Finding.scan_id == scan_id).all()
         seen_ids = {f.id for f in all_findings}
@@ -490,6 +725,7 @@ class ScanManager:
                 attack_vector="network",
                 status=f.status,
                 cvss_score=f.cvss_score,
+                confidence=_confidence_level(f.confidence) if f.confidence is not None else None,
             )
             for f in all_findings
         ]
