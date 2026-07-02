@@ -1,7 +1,14 @@
 """Celery application configuration for async scan processing."""
+import logging
 import os
 from celery import Celery
 from app.core.config import settings
+from app.core.logging import setup_logging
+
+# Ensure logging is configured for the Celery worker process.
+# setup_logging() is called here at module level so it runs even when
+# this module is imported by the Celery worker (not just FastAPI).
+setup_logging("INFO")
 
 DATABASE_URL = settings.database_url
 if DATABASE_URL.startswith("postgresql+psycopg2://"):

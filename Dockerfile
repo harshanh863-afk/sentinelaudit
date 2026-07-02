@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 COPY scanner/ ./scanner
+COPY rules/ ./rules
 RUN pip install --no-cache-dir ./scanner
 
 EXPOSE 8000

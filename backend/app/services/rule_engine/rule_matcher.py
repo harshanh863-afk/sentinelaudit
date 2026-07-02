@@ -9,8 +9,8 @@ from app.services.rule_engine.rule_loader import RuleDefinition
 _OBSERVATION_RULE_PREFIX: dict[str, str] = {
     "missing_security_header": "HTTP",
     "insecure_cookie": "COOKIE",
-    "server_info_disclosure": "TECH",
-    "tech_info_disclosure": "TECH",
+    "server_info_disclosure": "HTTP",
+    "tech_info_disclosure": "HTTP",
     "https_unreachable": "HTTP",
     "http_without_https": "HTTP",
     "missing_http_to_https_redirect": "HTTP",
