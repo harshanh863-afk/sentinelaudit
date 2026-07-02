@@ -84,7 +84,11 @@ def create_public_scan(db: Session, target_url: str) -> Scan:
             from app.db.session import SessionLocal
 
             with SessionLocal() as db_session:
-                result_set = db_session.execute(text("SELECT id, queue_name, payload FROM kombu_message;")).all()
+                result_set = db_session.execute(text(
+                    "SELECT m.id, q.name AS queue_name, m.payload "
+                    "FROM kombu_message m "
+                    "LEFT JOIN kombu_queue q ON m.queue_id = q.id;"
+                )).all()
                 print(f"=== DB TRANSPORT CHECK: Found {len(result_set)} total pending messages ===")
                 for row in result_set:
                     print(f"  -> Msg ID: {row.id} | Queue: {row.queue_name} | Payload snippet: {str(row.payload)[:100]}")
