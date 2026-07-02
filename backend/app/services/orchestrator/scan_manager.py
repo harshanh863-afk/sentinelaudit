@@ -51,6 +51,9 @@ class ScanManager:
             if not scan:
                 return {"status": "error", "detail": "Scan not found"}
 
+            if scan.started_at is None:
+                scan.started_at = datetime.now(timezone.utc)
+
             self._update_progress(session, scan, PipelineStage.HTTP_ANALYSIS, 5,
                                   "Starting assessment")
             all_observations: list[dict] = []
@@ -208,8 +211,8 @@ class ScanManager:
         ]
 
     async def _run_tls_analyzer(self, url: str) -> list[dict]:
-        from sentinelaudit_scanner.checks.tls_analyzer import TLSInspector
-        inspector = TLSInspector()
+        from sentinelaudit_scanner.checks.tls_analyzer import TLSAnalyzer
+        inspector = TLSAnalyzer()
         results = await self.run_with_timeout(inspector.analyze, url)
         return [
             {
@@ -242,9 +245,9 @@ class ScanManager:
         ]
 
     async def _run_tech_fingerprinter(self, url: str) -> list[dict]:
-        from sentinelaudit_scanner.checks.technology_fingerprint import TechnologyFingerprinter
-        fingerprinter = TechnologyFingerprinter()
-        results = await self.run_with_timeout(fingerprinter.analyze, url)
+        from sentinelaudit_scanner.checks.technology_fingerprint import TechFingerprinter
+        fingerprinter = TechFingerprinter()
+        results = await self.run_with_timeout(fingerprinter.fingerprint, url)
         return [
             {
                 "check_name": r.observation_type,
