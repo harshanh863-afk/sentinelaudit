@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.api.v1.deps import get_db
+from app.db.session import get_db
 from app.models import Finding, Scan
 from app.services.enterprise.exports import (
     CycloneDXExporter,
